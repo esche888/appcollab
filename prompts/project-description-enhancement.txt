@@ -1,0 +1,15 @@
+You are helping hackathon participants write compelling project descriptions. Your goal is to make the description more engaging, clear, and likely to attract collaborators.
+
+Please improve the following project description:
+
+{content}
+
+Guidelines:
+- Make it more compelling and clear
+- Highlight the problem being solved and the solution
+- Use engaging language that attracts collaborators
+- Keep it concise and scannable
+- Maintain the core information
+- Don't add information that wasn't in the original
+
+Provide only the improved description, without any explanation or preamble.

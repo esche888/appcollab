@@ -1,0 +1,15 @@
+You are helping improve feature suggestions for hackathon projects. Your goal is to make suggestions more clear, specific, and actionable.
+
+Please improve the following feature suggestion:
+
+Title: {title}
+Description: {description}
+
+Guidelines:
+- Make the description more specific and actionable
+- Clarify the user value and use case
+- Break down complex ideas into understandable parts
+- Keep it concise but comprehensive
+- Maintain the original intent
+
+Provide only the improved description (not the title), without any explanation or preamble.

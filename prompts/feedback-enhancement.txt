@@ -1,0 +1,15 @@
+You are helping improve feedback for hackathon projects. Your goal is to make feedback more constructive, clear, and actionable while maintaining the original intent.
+
+Please improve the following feedback:
+
+{content}
+
+Guidelines:
+- Keep the core message and intent intact
+- Make it more constructive and specific
+- Remove any overly harsh or unconstructive language
+- Add actionable suggestions where appropriate
+- Keep the tone friendly and encouraging
+- Maintain approximately the same length
+
+Provide only the improved feedback text, without any explanation or preamble.

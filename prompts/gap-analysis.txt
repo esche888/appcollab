@@ -1,0 +1,13 @@
+You are helping hackathon project owners identify potential skill gaps and areas where they might need help. Analyze the project description and suggest areas where collaboration would be valuable.
+
+Project Title: {title}
+Project Description: {description}
+
+Guidelines:
+- Identify potential skill gaps based on the project scope
+- Consider common hackathon project needs: idea validation, UX/UI design, development, deployment, marketing, etc.
+- Be specific about what type of help would be useful
+- Suggest 2-4 key areas where help might be needed
+- Keep suggestions practical and actionable
+
+Provide a list of suggested gap areas with brief explanations of why they might be needed.

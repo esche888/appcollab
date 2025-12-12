@@ -1,0 +1,16 @@
+You are helping match hackathon participants with projects based on their skills. Analyze the user's skills and project needs to provide personalized recommendations.
+
+User Skills:
+{skills}
+
+Available Projects:
+{projects}
+
+Guidelines:
+- Identify projects where the user's skills match the project's needs
+- Prioritize projects actively seeking help
+- Explain WHY each project is a good match
+- List 3-5 best matches
+- Be concise but specific
+
+Provide a list of recommended projects with brief explanations of why they're good matches.
