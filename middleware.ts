@@ -34,18 +34,6 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protect routes under /(main)
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
-  if (!user && request.nextUrl.pathname.startsWith('/profile')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
   if (!user && request.nextUrl.pathname.startsWith('/projects/new')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
@@ -61,7 +49,7 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/projects'
     return NextResponse.redirect(url)
   }
 

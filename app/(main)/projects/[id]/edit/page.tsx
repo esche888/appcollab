@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 
 const gapTypes = [
   { value: 'idea_assessment', label: 'Idea Assessment' },
@@ -19,12 +21,31 @@ const statuses = [
   { value: 'in_progress', label: 'In Progress' },
   { value: 'seeking_help', label: 'Seeking Help' },
   { value: 'on_hold', label: 'On Hold' },
+  { value: 'completed', label: 'Completed' },
 ]
 
-export default function NewProjectPage() {
+type Project = {
+  id: string
+  title: string
+  short_description: string
+  full_description: string | null
+  owner_ids: string[]
+  status: string
+  project_gaps?: Array<{
+    id: string
+    gap_type: string
+    description: string | null
+  }>
+}
+
+export default function EditProjectPage() {
   const router = useRouter()
+  const params = useParams()
   const [loading, setLoading] = useState(false)
+  const [loadingProject, setLoadingProject] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [project, setProject] = useState<Project | null>(null)
 
   const [title, setTitle] = useState('')
   const [shortDescription, setShortDescription] = useState('')
@@ -32,6 +53,54 @@ export default function NewProjectPage() {
   const [status, setStatus] = useState('idea')
   const [selectedGaps, setSelectedGaps] = useState<string[]>([])
   const [gapDescriptions, setGapDescriptions] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    async function loadProject() {
+      try {
+        // Get current user
+        const profileResponse = await fetch('/api/profile')
+        const profileResult = await profileResponse.json()
+        if (profileResult.success) {
+          setUserId(profileResult.data.id)
+        }
+
+        // Get project details
+        const response = await fetch(`/api/projects/${params.id}`)
+        const result = await response.json()
+
+        if (result.success) {
+          const projectData = result.data
+          setProject(projectData)
+          setTitle(projectData.title)
+          setShortDescription(projectData.short_description)
+          setFullDescription(projectData.full_description || '')
+          setStatus(projectData.status)
+
+          // Load gaps
+          if (projectData.project_gaps) {
+            const gaps = projectData.project_gaps.map((g: any) => g.gap_type)
+            setSelectedGaps(gaps)
+
+            const descriptions: Record<string, string> = {}
+            projectData.project_gaps.forEach((g: any) => {
+              if (g.description) {
+                descriptions[g.gap_type] = g.description
+              }
+            })
+            setGapDescriptions(descriptions)
+          }
+        } else {
+          setError('Failed to load project')
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setLoadingProject(false)
+      }
+    }
+
+    loadProject()
+  }, [params.id])
 
   const toggleGap = (gapType: string) => {
     setSelectedGaps(prev =>
@@ -47,13 +116,8 @@ export default function NewProjectPage() {
     setLoading(true)
 
     try {
-      const gaps = selectedGaps.map(gapType => ({
-        gap_type: gapType,
-        description: gapDescriptions[gapType] || '',
-      }))
-
-      const response = await fetch('/api/projects', {
-        method: 'POST',
+      const response = await fetch(`/api/projects/${params.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -62,14 +126,13 @@ export default function NewProjectPage() {
           short_description: shortDescription,
           full_description: fullDescription,
           status,
-          gaps,
         }),
       })
 
       const result = await response.json()
 
       if (result.success) {
-        router.push(`/projects/${result.data.id}`)
+        router.push(`/projects/${params.id}`)
       } else {
         setError(result.error)
       }
@@ -80,10 +143,42 @@ export default function NewProjectPage() {
     }
   }
 
+  if (loadingProject) {
+    return (
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto">
+          <p>Loading project...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if user is owner
+  if (project && userId && !project.owner_ids.includes(userId)) {
+    return (
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+            You don't have permission to edit this project.
+          </div>
+          <Link href={`/projects/${params.id}`} className="inline-flex items-center text-gray-600 hover:text-gray-900 mt-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Project
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Create New Project</h1>
+        <Link href={`/projects/${params.id}`} className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Project
+        </Link>
+
+        <h1 className="text-3xl font-bold mb-6">Edit Project</h1>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
           {error && (
@@ -158,55 +253,16 @@ export default function NewProjectPage() {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              What help do you need? (Select all that apply)
-            </label>
-            <div className="space-y-4">
-              {gapTypes.map((gap) => (
-                <div key={gap.value} className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id={gap.value}
-                      checked={selectedGaps.includes(gap.value)}
-                      onCheckedChange={() => toggleGap(gap.value)}
-                    />
-                    <label
-                      htmlFor={gap.value}
-                      className="text-sm font-medium text-gray-700 cursor-pointer"
-                    >
-                      {gap.label}
-                    </label>
-                  </div>
-                  {selectedGaps.includes(gap.value) && (
-                    <input
-                      type="text"
-                      value={gapDescriptions[gap.value] || ''}
-                      onChange={(e) =>
-                        setGapDescriptions(prev => ({
-                          ...prev,
-                          [gap.value]: e.target.value,
-                        }))
-                      }
-                      className="ml-6 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
-                      placeholder={`Describe what kind of ${gap.label.toLowerCase()} help you need...`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="flex justify-end gap-4 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => router.push(`/projects/${params.id}`)}
             >
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Project'}
+              {loading ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

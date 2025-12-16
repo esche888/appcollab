@@ -46,6 +46,8 @@ export type Feedback = {
   id: string
   project_id: string
   user_id: string
+  parent_id: string | null
+  title: string | null
   content: string
   ai_enhanced: boolean
   created_at: string

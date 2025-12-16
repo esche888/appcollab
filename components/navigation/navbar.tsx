@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { SettingsModal } from './settings-modal'
+import { ProfileModal } from './profile-modal'
 import { LogOut } from 'lucide-react'
 
 export function Navbar() {
@@ -20,9 +21,7 @@ export function Navbar() {
   }
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard' },
     { href: '/projects', label: 'Projects' },
-    { href: '/profile', label: 'Profile' },
   ]
 
   return (
@@ -31,7 +30,7 @@ export function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <Link
-              href="/dashboard"
+              href="/projects"
               className="flex items-center px-2 text-xl font-bold text-gray-900"
             >
               AppCollab
@@ -55,6 +54,7 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center space-x-4">
+            <ProfileModal />
             <SettingsModal />
             <Button
               variant="ghost"

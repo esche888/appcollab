@@ -1,18 +1,34 @@
--- AppCollab Database Schema (ORIGINAL VERSION - OUTDATED)
--- ⚠️ WARNING: This is the original schema file and is now OUTDATED
---
--- For the complete, up-to-date schema that includes:
--- - Threaded feedback (parent_id column)
--- - Feedback titles (title column)
--- - All bug fixes and improvements
---
--- USE THIS FILE INSTEAD: supabase-schema-complete.sql
---
--- This file is kept for reference only.
+-- AppCollab Complete Database Schema
+-- This script recreates the entire database schema from scratch
+-- Run this in your Supabase SQL Editor
+
+-- ============================================================================
+-- CLEANUP (WARNING: This will delete all existing data!)
 -- ============================================================================
 
--- Enable UUID extension
+-- Drop all tables in reverse dependency order
+DROP TABLE IF EXISTS ai_usage_logs CASCADE;
+DROP TABLE IF EXISTS ai_settings CASCADE;
+DROP TABLE IF EXISTS feature_suggestions CASCADE;
+DROP TABLE IF EXISTS feedback CASCADE;
+DROP TABLE IF EXISTS gap_contributors CASCADE;
+DROP TABLE IF EXISTS project_gaps CASCADE;
+DROP TABLE IF EXISTS projects CASCADE;
+DROP TABLE IF EXISTS profiles CASCADE;
+
+-- Drop functions
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+
+-- ============================================================================
+-- EXTENSIONS
+-- ============================================================================
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================================================
+-- TABLES
+-- ============================================================================
 
 -- Profiles table (extends auth.users)
 CREATE TABLE profiles (
@@ -63,16 +79,24 @@ CREATE TABLE gap_contributors (
   UNIQUE(gap_id, user_id)
 );
 
--- Feedback table
+-- Feedback table (with threading support and titles)
 CREATE TABLE feedback (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  parent_id UUID REFERENCES feedback(id) ON DELETE CASCADE,
+  title TEXT,
   content TEXT NOT NULL,
   ai_enhanced BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  deleted_at TIMESTAMPTZ
+  deleted_at TIMESTAMPTZ,
+  -- Constraint: top-level feedback must have a title, replies don't need one
+  CONSTRAINT feedback_title_check CHECK (
+    (parent_id IS NULL AND title IS NOT NULL AND title != '')
+    OR
+    (parent_id IS NOT NULL)
+  )
 );
 
 -- Feature suggestions table
@@ -109,7 +133,10 @@ CREATE TABLE ai_usage_logs (
   response_time_ms INTEGER NOT NULL
 );
 
--- Create indexes for better performance
+-- ============================================================================
+-- INDEXES
+-- ============================================================================
+
 CREATE INDEX idx_profiles_username ON profiles(username) WHERE deleted_at IS NULL;
 CREATE INDEX idx_profiles_role ON profiles(role) WHERE deleted_at IS NULL;
 CREATE INDEX idx_projects_status ON projects(status) WHERE deleted_at IS NULL;
@@ -118,9 +145,14 @@ CREATE INDEX idx_project_gaps_project_id ON project_gaps(project_id) WHERE delet
 CREATE INDEX idx_gap_contributors_gap_id ON gap_contributors(gap_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_gap_contributors_user_id ON gap_contributors(user_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_feedback_project_id ON feedback(project_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_feedback_parent_id ON feedback(parent_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_feature_suggestions_project_id ON feature_suggestions(project_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_ai_usage_logs_user_id ON ai_usage_logs(user_id);
 CREATE INDEX idx_ai_usage_logs_timestamp ON ai_usage_logs(request_timestamp DESC);
+
+-- ============================================================================
+-- FUNCTIONS
+-- ============================================================================
 
 -- Function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -130,22 +162,6 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
--- Create triggers for updated_at
-CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_feedback_updated_at BEFORE UPDATE ON feedback
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_feature_suggestions_updated_at BEFORE UPDATE ON feature_suggestions
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_ai_settings_updated_at BEFORE UPDATE ON ai_settings
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Function to create profile on user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -161,12 +177,34 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ============================================================================
+-- TRIGGERS
+-- ============================================================================
+
+-- Triggers for updated_at
+CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_feedback_updated_at BEFORE UPDATE ON feedback
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_feature_suggestions_updated_at BEFORE UPDATE ON feature_suggestions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_ai_settings_updated_at BEFORE UPDATE ON ai_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Trigger to automatically create profile on signup
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Row Level Security (RLS) Policies
+-- ============================================================================
+-- ROW LEVEL SECURITY (RLS)
+-- ============================================================================
 
 -- Enable RLS on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -178,7 +216,10 @@ ALTER TABLE feature_suggestions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_usage_logs ENABLE ROW LEVEL SECURITY;
 
--- Profiles policies
+-- ============================================================================
+-- RLS POLICIES - PROFILES
+-- ============================================================================
+
 CREATE POLICY "Public profiles are viewable by everyone"
   ON profiles FOR SELECT
   USING (deleted_at IS NULL);
@@ -187,7 +228,10 @@ CREATE POLICY "Users can update own profile"
   ON profiles FOR UPDATE
   USING (auth.uid() = id AND deleted_at IS NULL);
 
--- Projects policies
+-- ============================================================================
+-- RLS POLICIES - PROJECTS
+-- ============================================================================
+
 CREATE POLICY "Projects are viewable by everyone"
   ON projects FOR SELECT
   USING (deleted_at IS NULL);
@@ -205,7 +249,10 @@ CREATE POLICY "Project owners can soft delete their projects"
   USING (auth.uid() = ANY(owner_ids))
   WITH CHECK (deleted_at IS NOT NULL OR auth.uid() = ANY(owner_ids));
 
--- Project gaps policies
+-- ============================================================================
+-- RLS POLICIES - PROJECT GAPS
+-- ============================================================================
+
 CREATE POLICY "Gaps are viewable by everyone"
   ON project_gaps FOR SELECT
   USING (deleted_at IS NULL);
@@ -220,7 +267,10 @@ CREATE POLICY "Project owners can manage gaps"
     )
   );
 
--- Gap contributors policies
+-- ============================================================================
+-- RLS POLICIES - GAP CONTRIBUTORS
+-- ============================================================================
+
 CREATE POLICY "Contributors are viewable by everyone"
   ON gap_contributors FOR SELECT
   USING (deleted_at IS NULL);
@@ -237,7 +287,10 @@ CREATE POLICY "Users can remove their contributions"
   ON gap_contributors FOR UPDATE
   USING (auth.uid() = user_id);
 
--- Feedback policies
+-- ============================================================================
+-- RLS POLICIES - FEEDBACK
+-- ============================================================================
+
 CREATE POLICY "Feedback is viewable by everyone"
   ON feedback FOR SELECT
   USING (deleted_at IS NULL);
@@ -254,7 +307,10 @@ CREATE POLICY "Users can soft delete their own feedback"
   ON feedback FOR UPDATE
   USING (auth.uid() = user_id);
 
--- Feature suggestions policies
+-- ============================================================================
+-- RLS POLICIES - FEATURE SUGGESTIONS
+-- ============================================================================
+
 CREATE POLICY "Feature suggestions are viewable by everyone"
   ON feature_suggestions FOR SELECT
   USING (deleted_at IS NULL);
@@ -277,7 +333,10 @@ CREATE POLICY "Project owners can update suggestion status"
     )
   );
 
--- AI settings policies (admin only)
+-- ============================================================================
+-- RLS POLICIES - AI SETTINGS
+-- ============================================================================
+
 CREATE POLICY "AI settings viewable by admins"
   ON ai_settings FOR SELECT
   USING (
@@ -298,7 +357,10 @@ CREATE POLICY "AI settings manageable by admins"
     )
   );
 
--- AI usage logs policies
+-- ============================================================================
+-- RLS POLICIES - AI USAGE LOGS
+-- ============================================================================
+
 CREATE POLICY "Users can view their own usage logs"
   ON ai_usage_logs FOR SELECT
   USING (auth.uid() = user_id);
@@ -317,12 +379,43 @@ CREATE POLICY "System can insert usage logs"
   ON ai_usage_logs FOR INSERT
   WITH CHECK (true);
 
+-- ============================================================================
+-- DEFAULT DATA
+-- ============================================================================
+
 -- Insert default AI settings
 INSERT INTO ai_settings (active_model, model_config)
 VALUES ('chatgpt', '{"model": "gpt-4-turbo-preview", "temperature": 0.7}'::jsonb)
 ON CONFLICT DO NOTHING;
 
--- Grant necessary permissions
+-- ============================================================================
+-- PERMISSIONS
+-- ============================================================================
+
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+-- ============================================================================
+-- COMPLETION MESSAGE
+-- ============================================================================
+
+DO $$
+BEGIN
+  RAISE NOTICE '===========================================';
+  RAISE NOTICE 'Database schema recreated successfully!';
+  RAISE NOTICE '===========================================';
+  RAISE NOTICE 'Tables created: 8';
+  RAISE NOTICE 'Indexes created: 12';
+  RAISE NOTICE 'Functions created: 2';
+  RAISE NOTICE 'Triggers created: 6';
+  RAISE NOTICE 'RLS Policies created: 18';
+  RAISE NOTICE '===========================================';
+  RAISE NOTICE 'Features included:';
+  RAISE NOTICE '- Threaded feedback with parent_id';
+  RAISE NOTICE '- Feedback titles for top-level comments';
+  RAISE NOTICE '- Project CRUD operations';
+  RAISE NOTICE '- Gap management';
+  RAISE NOTICE '- Soft deletes';
+  RAISE NOTICE '===========================================';
+END $$;

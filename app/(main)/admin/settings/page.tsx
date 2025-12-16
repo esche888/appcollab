@@ -58,6 +58,7 @@ export default function AdminSettingsPage() {
         setMessage({ type: 'error', text: result.error })
       }
     } catch (error) {
+      console.error('Error saving settings:', error) // Added console.error to use the variable
       setMessage({ type: 'error', text: 'Failed to save settings' })
     } finally {
       setSaving(false)
@@ -102,11 +103,10 @@ export default function AdminSettingsPage() {
 
         {message && (
           <div
-            className={`mb-6 px-4 py-3 rounded ${
-              message.type === 'success'
-                ? 'bg-green-50 border border-green-200 text-green-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
-            }`}
+            className={`mb-6 px-4 py-3 rounded ${message.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
+              }`}
           >
             {message.text}
           </div>
@@ -145,13 +145,12 @@ export default function AdminSettingsPage() {
               return (
                 <div
                   key={model}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                    activeModel === model
-                      ? 'border-blue-500 bg-blue-50'
-                      : isAvailable
+                  className={`border rounded-lg p-4 cursor-pointer transition-all ${activeModel === model
+                    ? 'border-blue-500 bg-blue-50'
+                    : isAvailable
                       ? 'border-gray-300 hover:border-gray-400'
                       : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
-                  }`}
+                    }`}
                   onClick={() => isAvailable && setActiveModel(model)}
                 >
                   <div className="flex items-start justify-between">

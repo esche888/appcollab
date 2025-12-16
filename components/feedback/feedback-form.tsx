@@ -9,6 +9,7 @@ interface FeedbackFormProps {
 }
 
 export function FeedbackForm({ projectId, onFeedbackAdded }: FeedbackFormProps) {
+  const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,6 +26,7 @@ export function FeedbackForm({ projectId, onFeedbackAdded }: FeedbackFormProps) 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          title,
           content,
           ai_enhanced: false,
         }),
@@ -33,6 +35,7 @@ export function FeedbackForm({ projectId, onFeedbackAdded }: FeedbackFormProps) 
       const result = await response.json()
 
       if (result.success) {
+        setTitle('')
         setContent('')
         onFeedbackAdded()
       } else {
@@ -54,22 +57,37 @@ export function FeedbackForm({ projectId, onFeedbackAdded }: FeedbackFormProps) 
       )}
 
       <div>
+        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+          Title *
+        </label>
+        <input
+          id="title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+          placeholder="Brief summary of your feedback"
+          required
+        />
+      </div>
+
+      <div>
         <label htmlFor="feedback" className="block text-sm font-medium text-gray-700 mb-1">
-          Your Feedback
+          Your Feedback *
         </label>
         <textarea
           id="feedback"
           rows={4}
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
           placeholder="Share your thoughts, suggestions, or constructive feedback..."
           required
         />
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={loading || !content.trim()}>
+        <Button type="submit" disabled={loading || !content.trim() || !title.trim()}>
           {loading ? 'Posting...' : 'Post Feedback'}
         </Button>
       </div>

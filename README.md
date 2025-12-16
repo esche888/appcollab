@@ -27,9 +27,11 @@ A web application that helps hackathon participants find collaborators to fill s
 4. Copy your **Project URL** and **anon/public** key
 5. Go to **Project Settings** > **Database** and copy your **service_role** key (keep this secret!)
 6. Go to the **SQL Editor** and create a new query
-7. Copy the entire contents of `supabase-schema.sql` from this project
+7. Copy the entire contents of `supabase-schema-complete.sql` from this project
 8. Paste it into the SQL Editor and click **Run**
 9. Verify that all tables were created successfully
+
+> **Note**: Use `supabase-schema-complete.sql` for a fresh installation. See `DATABASE_SETUP.md` for detailed instructions.
 
 ### 3. Configure Environment Variables
 
@@ -72,15 +74,23 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 The application uses the following main tables:
 
 - **profiles** - User profiles with skills inventory
-- **projects** - Hackathon projects
+- **projects** - Hackathon projects with multi-owner support
 - **project_gaps** - Skill gaps/needs for projects
 - **gap_contributors** - Users who tagged themselves to help
-- **feedback** - Project feedback
+- **feedback** - Threaded feedback with titles (supports replies)
 - **feature_suggestions** - Feature suggestions with upvotes
 - **ai_settings** - AI model configuration (admin)
 - **ai_usage_logs** - AI usage tracking
 
 All tables support soft deletes via `deleted_at` timestamp.
+
+**Latest Features**:
+- ✅ Threaded feedback comments (parent/child relationships)
+- ✅ Feedback titles for top-level comments
+- ✅ Full CRUD operations for project owners
+- ✅ Gap management (add, edit, delete)
+
+See `DATABASE_SETUP.md` for complete schema documentation and setup instructions.
 
 ## Features
 
@@ -88,9 +98,11 @@ All tables support soft deletes via `deleted_at` timestamp.
 - User authentication (email/password)
 - User profiles with skills inventory
 - Project registration with status tracking
+- Full CRUD operations for project owners (Create, Read, Update, Delete)
 - Gap/need management (idea assessment, UX design, development, deployment, commercialization, marketing)
+- Add, edit, and delete gaps (project owners only)
 - Contributor tagging ("tag yourself" to help)
-- Project feedback system
+- Threaded feedback system with titles and replies
 - Feature suggestions with upvoting
 
 ### AI Enhancements

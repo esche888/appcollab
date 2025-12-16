@@ -3,18 +3,88 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ProjectCard } from '@/components/projects/project-card'
-import { Plus } from 'lucide-react'
+import { Plus, User, Filter } from 'lucide-react'
 import Link from 'next/link'
 import type { Project } from '@/types/database'
+
+type ProjectOwner = {
+  id: string
+  username: string
+  full_name: string | null
+}
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string>('all')
+  const [projectOwners, setProjectOwners] = useState<ProjectOwner[]>([])
+  const [userId, setUserId] = useState<string | null>(null)
 
+  // Fetch current user ID
+  useEffect(() => {
+    async function getUserId() {
+      const response = await fetch('/api/profile')
+      const result = await response.json()
+      if (result.success) {
+        setUserId(result.data.id)
+      }
+    }
+    getUserId()
+  }, [])
+
+  // Fetch all projects to extract unique owners
+  useEffect(() => {
+    async function loadOwners() {
+      const response = await fetch('/api/projects')
+      const result = await response.json()
+
+      if (result.success) {
+        // Extract unique owner IDs from all projects
+        const ownerIds = new Set<string>()
+        result.data.forEach((project: Project) => {
+          project.owner_ids.forEach((ownerId: string) => {
+            ownerIds.add(ownerId)
+          })
+        })
+
+        // Fetch profile information for each owner
+        const ownerProfiles = await Promise.all(
+          Array.from(ownerIds).map(async (ownerId) => {
+            const profileResponse = await fetch(`/api/profiles/${ownerId}`)
+            const profileResult = await profileResponse.json()
+            if (profileResult.success) {
+              return {
+                id: ownerId,
+                username: profileResult.data.username,
+                full_name: profileResult.data.full_name,
+              }
+            }
+            return null
+          })
+        )
+
+        setProjectOwners(ownerProfiles.filter((p): p is ProjectOwner => p !== null))
+      }
+    }
+
+    loadOwners()
+  }, [])
+
+  // Load projects based on filters
   useEffect(() => {
     async function loadProjects() {
-      const url = filter === 'all' ? '/api/projects' : `/api/projects?status=${filter}`
+      const params = new URLSearchParams()
+
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter)
+      }
+
+      if (selectedOwnerId !== 'all') {
+        params.append('userId', selectedOwnerId)
+      }
+
+      const url = params.toString() ? `/api/projects?${params}` : '/api/projects'
       const response = await fetch(url)
       const result = await response.json()
 
@@ -26,10 +96,10 @@ export default function ProjectsPage() {
     }
 
     loadProjects()
-  }, [filter])
+  }, [statusFilter, selectedOwnerId])
 
-  const filters = [
-    { value: 'all', label: 'All Projects' },
+  const statusFilters = [
+    { value: 'all', label: 'All Statuses' },
     { value: 'idea', label: 'Ideas' },
     { value: 'seeking_help', label: 'Seeking Help' },
     { value: 'in_progress', label: 'In Progress' },
@@ -49,20 +119,45 @@ export default function ProjectsPage() {
           </Link>
         </div>
 
-        <div className="flex gap-2 mb-6 flex-wrap">
-          {filters.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                filter === f.value
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-              }`}
+        {/* Filters */}
+        <div className="mb-6 bg-white p-4 rounded-lg shadow border border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Owner Filter Dropdown */}
+            <select
+              id="owner-filter"
+              value={selectedOwnerId}
+              onChange={(e) => setSelectedOwnerId(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
             >
-              {f.label}
-            </button>
-          ))}
+              <option value="all">All Owners</option>
+              {userId && (
+                <option value={userId}>My Projects</option>
+              )}
+              <option disabled>─────────────</option>
+              {projectOwners
+                .filter(owner => owner.id !== userId)
+                .sort((a, b) => (a.username || '').localeCompare(b.username || ''))
+                .map((owner) => (
+                  <option key={owner.id} value={owner.id}>
+                    {owner.full_name || owner.username}
+                  </option>
+                ))}
+            </select>
+
+            {/* Status Filter Dropdown */}
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+            >
+              {statusFilters.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {loading ? (
