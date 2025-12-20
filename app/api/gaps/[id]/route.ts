@@ -26,12 +26,13 @@ export async function PUT(
   }
 
   const body = await request.json()
-  const { gap_type, description, is_filled } = body
+  const { gap_type, description, is_filled, status } = body
 
   const updateData: any = {}
   if (gap_type !== undefined) updateData.gap_type = gap_type
   if (description !== undefined) updateData.description = description
   if (is_filled !== undefined) updateData.is_filled = is_filled
+  if (status !== undefined) updateData.status = status
 
   const { data, error } = await supabase
     .from('project_gaps')

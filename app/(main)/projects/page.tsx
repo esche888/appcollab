@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { ProjectCard } from '@/components/projects/project-card'
 import { Plus, User, Filter } from 'lucide-react'
@@ -20,14 +20,18 @@ export default function ProjectsPage() {
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>('all')
   const [projectOwners, setProjectOwners] = useState<ProjectOwner[]>([])
   const [userId, setUserId] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
 
-  // Fetch current user ID
+  // Fetch current user ID and role
   useEffect(() => {
     async function getUserId() {
       const response = await fetch('/api/profile')
       const result = await response.json()
       if (result.success) {
         setUserId(result.data.id)
+        setUserRole(result.data.role)
       }
     }
     getUserId()
@@ -72,62 +76,119 @@ export default function ProjectsPage() {
   }, [])
 
   // Load projects based on filters
-  useEffect(() => {
-    async function loadProjects() {
-      const params = new URLSearchParams()
+  const loadProjects = useCallback(async () => {
+    const params = new URLSearchParams()
 
-      if (statusFilter !== 'all') {
-        params.append('status', statusFilter)
-      }
-
-      if (selectedOwnerId !== 'all') {
-        params.append('userId', selectedOwnerId)
-      }
-
-      const url = params.toString() ? `/api/projects?${params}` : '/api/projects'
-      const response = await fetch(url)
-      const result = await response.json()
-
-      if (result.success) {
-        setProjects(result.data)
-      }
-
-      setLoading(false)
+    if (statusFilter !== 'all') {
+      params.append('status', statusFilter)
     }
 
+    if (selectedOwnerId !== 'all') {
+      params.append('userId', selectedOwnerId)
+    }
+
+    // Include archived if toggle is on
+    if (showArchived) {
+      params.append('includeArchived', 'true')
+    }
+
+    // Filter favorites only if toggle is on
+    if (favoritesOnly) {
+      params.append('favoritesOnly', 'true')
+    }
+
+    const url = params.toString() ? `/api/projects?${params}` : '/api/projects'
+    const response = await fetch(url)
+    const result = await response.json()
+
+    if (result.success) {
+      setProjects(result.data)
+    }
+
+    setLoading(false)
+  }, [statusFilter, selectedOwnerId, showArchived, favoritesOnly])
+
+  useEffect(() => {
     loadProjects()
-  }, [statusFilter, selectedOwnerId])
+  }, [loadProjects])
 
   const statusFilters = [
     { value: 'all', label: 'All Statuses' },
+    { value: 'draft', label: 'Drafts (Private)' },
     { value: 'idea', label: 'Ideas' },
-    { value: 'seeking_help', label: 'Seeking Help' },
     { value: 'in_progress', label: 'In Progress' },
     { value: 'completed', label: 'Completed' },
+    { value: 'archived', label: 'Archived' },
   ]
 
   return (
-    <div className="p-8">
+    <div className="p-8 min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <Link href="/projects/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
-            </Button>
-          </Link>
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2">Projects</h1>
+              <p className="text-blue-100">Explore and collaborate on exciting projects</p>
+            </div>
+            <Link href="/projects/new">
+              <Button className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all transform hover:scale-105 font-semibold">
+                <Plus className="h-4 w-4 mr-2" />
+                New Project
+              </Button>
+            </Link>
+          </div>
         </div>
 
+        {/* Favorites filter */}
+        <div className="mb-6 bg-yellow-50 border-2 border-yellow-200 p-4 rounded-xl shadow-sm">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={favoritesOnly}
+              onChange={(e) => setFavoritesOnly(e.target.checked)}
+              className="mr-3 h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-yellow-300 rounded transition-all"
+            />
+            <span className="text-sm font-medium text-yellow-900">
+              Show only favorite projects
+            </span>
+          </label>
+        </div>
+
+        {/* Show archived toggle - only for owners viewing their projects or admins */}
+        {(selectedOwnerId === userId || userRole === 'admin') && (
+          <div className="mb-6 bg-orange-50 border-2 border-orange-200 p-4 rounded-xl shadow-sm">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+                className="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500 border-orange-300 rounded transition-all"
+              />
+              <span className="text-sm font-medium text-orange-900">
+                Show archived projects
+                {userRole === 'admin' && selectedOwnerId === 'all' && ' (all users)'}
+              </span>
+            </label>
+          </div>
+        )}
+
         {/* Filters */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mb-8 bg-white rounded-xl shadow-lg border-2 border-blue-100">
+          <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4 rounded-t-xl">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-white" />
+              <h2 className="text-lg font-semibold text-white">Filter Projects</h2>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Owner Filter Dropdown */}
             <select
               id="owner-filter"
               value={selectedOwnerId}
               onChange={(e) => setSelectedOwnerId(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+              className="px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white font-medium transition-all"
             >
               <option value="all">All Owners</option>
               {userId && (
@@ -149,7 +210,7 @@ export default function ProjectsPage() {
               id="status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+              className="px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white font-medium transition-all"
             >
               {statusFilters.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -157,25 +218,35 @@ export default function ProjectsPage() {
                 </option>
               ))}
             </select>
+            </div>
           </div>
         </div>
 
-        {loading ? (
-          <p>Loading projects...</p>
-        ) : projects.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <p className="text-gray-600 mb-4">No projects found</p>
-            <Link href="/projects/new">
-              <Button>Create Your First Project</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        )}
+        {/* Projects Section */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 border-2 border-purple-100">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
+            {loading ? 'Loading...' : projects.length === 0 ? 'No Projects' : `All Projects (${projects.length})`}
+          </h2>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600 text-lg">Loading projects...</p>
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="text-center py-16 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border-2 border-dashed border-blue-200">
+              <p className="text-gray-600 mb-6 text-lg">No projects found</p>
+              <Link href="/projects/new">
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">Create Your First Project</Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project) => (
+                <ProjectCard key={project.id} project={project} onFavoriteChange={loadProjects} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

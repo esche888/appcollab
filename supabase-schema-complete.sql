@@ -7,6 +7,8 @@
 -- ============================================================================
 
 -- Drop all tables in reverse dependency order
+DROP TABLE IF EXISTS best_practice_comments CASCADE;
+DROP TABLE IF EXISTS best_practices CASCADE;
 DROP TABLE IF EXISTS ai_usage_logs CASCADE;
 DROP TABLE IF EXISTS ai_settings CASCADE;
 DROP TABLE IF EXISTS feature_suggestions CASCADE;
@@ -51,7 +53,7 @@ CREATE TABLE projects (
   short_description TEXT NOT NULL,
   full_description TEXT,
   owner_ids UUID[] NOT NULL,
-  status TEXT NOT NULL DEFAULT 'idea' CHECK (status IN ('idea', 'in_progress', 'seeking_help', 'on_hold', 'completed')),
+  status TEXT NOT NULL DEFAULT 'idea' CHECK (status IN ('draft', 'idea', 'in_progress', 'seeking_help', 'on_hold', 'completed', 'archived')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   deleted_at TIMESTAMPTZ
@@ -133,6 +135,43 @@ CREATE TABLE ai_usage_logs (
   response_time_ms INTEGER NOT NULL
 );
 
+-- Best practices table
+CREATE TABLE best_practices (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (category IN (
+    'architecture',
+    'development',
+    'testing',
+    'deployment',
+    'security',
+    'ux_design',
+    'performance',
+    'documentation',
+    'collaboration',
+    'project_management',
+    'other'
+  )),
+  upvotes INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ
+);
+
+-- Best practice comments table
+CREATE TABLE best_practice_comments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  best_practice_id UUID NOT NULL REFERENCES best_practices(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ
+);
+
 -- ============================================================================
 -- INDEXES
 -- ============================================================================
@@ -149,6 +188,13 @@ CREATE INDEX idx_feedback_parent_id ON feedback(parent_id) WHERE deleted_at IS N
 CREATE INDEX idx_feature_suggestions_project_id ON feature_suggestions(project_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_ai_usage_logs_user_id ON ai_usage_logs(user_id);
 CREATE INDEX idx_ai_usage_logs_timestamp ON ai_usage_logs(request_timestamp DESC);
+CREATE INDEX idx_best_practices_user_id ON best_practices(user_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_best_practices_status ON best_practices(status) WHERE deleted_at IS NULL;
+CREATE INDEX idx_best_practices_category ON best_practices(category) WHERE deleted_at IS NULL;
+CREATE INDEX idx_best_practices_upvotes ON best_practices(upvotes DESC) WHERE deleted_at IS NULL AND status = 'published';
+CREATE INDEX idx_best_practices_created_at ON best_practices(created_at DESC) WHERE deleted_at IS NULL;
+CREATE INDEX idx_best_practice_comments_bp_id ON best_practice_comments(best_practice_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_best_practice_comments_user_id ON best_practice_comments(user_id) WHERE deleted_at IS NULL;
 
 -- ============================================================================
 -- FUNCTIONS
@@ -197,6 +243,12 @@ CREATE TRIGGER update_feature_suggestions_updated_at BEFORE UPDATE ON feature_su
 CREATE TRIGGER update_ai_settings_updated_at BEFORE UPDATE ON ai_settings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_best_practices_updated_at BEFORE UPDATE ON best_practices
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_best_practice_comments_updated_at BEFORE UPDATE ON best_practice_comments
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Trigger to automatically create profile on signup
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -215,6 +267,8 @@ ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE feature_suggestions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ai_usage_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE best_practices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE best_practice_comments ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
 -- RLS POLICIES - PROFILES
@@ -234,7 +288,23 @@ CREATE POLICY "Users can update own profile"
 
 CREATE POLICY "Projects are viewable by everyone"
   ON projects FOR SELECT
-  USING (deleted_at IS NULL);
+  USING (
+    deleted_at IS NULL AND (
+      -- Draft projects: only owners can see
+      (status = 'draft' AND auth.uid() = ANY(owner_ids)) OR
+      -- Archived projects: only owners and admins can see
+      (status = 'archived' AND (
+        auth.uid() = ANY(owner_ids) OR
+        EXISTS (
+          SELECT 1 FROM profiles
+          WHERE profiles.id = auth.uid()
+          AND profiles.role = 'admin'
+        )
+      )) OR
+      -- All other statuses: public
+      (status NOT IN ('draft', 'archived'))
+    )
+  );
 
 CREATE POLICY "Authenticated users can create projects"
   ON projects FOR INSERT
@@ -299,13 +369,10 @@ CREATE POLICY "Authenticated users can create feedback"
   ON feedback FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own feedback"
+CREATE POLICY "Users can update and delete their own feedback"
   ON feedback FOR UPDATE
-  USING (auth.uid() = user_id AND deleted_at IS NULL);
-
-CREATE POLICY "Users can soft delete their own feedback"
-  ON feedback FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- ============================================================================
 -- RLS POLICIES - FEATURE SUGGESTIONS
@@ -380,6 +447,68 @@ CREATE POLICY "System can insert usage logs"
   WITH CHECK (true);
 
 -- ============================================================================
+-- RLS POLICIES - BEST PRACTICES
+-- ============================================================================
+
+CREATE POLICY "Published best practices viewable by everyone"
+  ON best_practices FOR SELECT
+  USING (
+    deleted_at IS NULL AND (
+      status = 'published' OR
+      status = 'archived' OR
+      auth.uid() = user_id
+    )
+  );
+
+CREATE POLICY "Authenticated users can create best practices"
+  ON best_practices FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Owners can update their own best practices"
+  ON best_practices FOR UPDATE
+  USING (auth.uid() = user_id AND deleted_at IS NULL);
+
+CREATE POLICY "Owners can soft delete their own best practices"
+  ON best_practices FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- RLS POLICIES - BEST PRACTICE COMMENTS
+-- ============================================================================
+
+CREATE POLICY "Comments viewable by everyone"
+  ON best_practice_comments FOR SELECT
+  USING (
+    deleted_at IS NULL AND
+    EXISTS (
+      SELECT 1 FROM best_practices
+      WHERE best_practices.id = best_practice_comments.best_practice_id
+      AND best_practices.deleted_at IS NULL
+      AND (best_practices.status = 'published' OR best_practices.status = 'archived')
+    )
+  );
+
+CREATE POLICY "Authenticated users can create comments on published"
+  ON best_practice_comments FOR INSERT
+  WITH CHECK (
+    auth.uid() = user_id AND
+    EXISTS (
+      SELECT 1 FROM best_practices
+      WHERE best_practices.id = best_practice_comments.best_practice_id
+      AND best_practices.status = 'published'
+      AND best_practices.deleted_at IS NULL
+    )
+  );
+
+CREATE POLICY "Users can update their own comments"
+  ON best_practice_comments FOR UPDATE
+  USING (auth.uid() = user_id AND deleted_at IS NULL);
+
+CREATE POLICY "Users can soft delete their own comments"
+  ON best_practice_comments FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- ============================================================================
 -- DEFAULT DATA
 -- ============================================================================
 
@@ -405,17 +534,19 @@ BEGIN
   RAISE NOTICE '===========================================';
   RAISE NOTICE 'Database schema recreated successfully!';
   RAISE NOTICE '===========================================';
-  RAISE NOTICE 'Tables created: 8';
-  RAISE NOTICE 'Indexes created: 12';
+  RAISE NOTICE 'Tables created: 10';
+  RAISE NOTICE 'Indexes created: 19';
   RAISE NOTICE 'Functions created: 2';
-  RAISE NOTICE 'Triggers created: 6';
-  RAISE NOTICE 'RLS Policies created: 18';
+  RAISE NOTICE 'Triggers created: 8';
+  RAISE NOTICE 'RLS Policies created: 26';
   RAISE NOTICE '===========================================';
   RAISE NOTICE 'Features included:';
   RAISE NOTICE '- Threaded feedback with parent_id';
   RAISE NOTICE '- Feedback titles for top-level comments';
   RAISE NOTICE '- Project CRUD operations';
   RAISE NOTICE '- Gap management';
+  RAISE NOTICE '- Best practices sharing with upvotes';
+  RAISE NOTICE '- Best practice comments (flat structure)';
   RAISE NOTICE '- Soft deletes';
   RAISE NOTICE '===========================================';
 END $$;

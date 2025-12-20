@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Users, FileText, MessageSquare, Sparkles, Settings } from 'lucide-react'
+import { Users, FileText, MessageSquare, Sparkles, Settings, ClipboardList } from 'lucide-react'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -125,6 +125,14 @@ export default async function AdminPage() {
               <h2 className="text-xl font-semibold">Project History</h2>
             </div>
             <p className="text-gray-600">View all projects and their history</p>
+          </Link>
+
+          <Link href="/admin/audit-logs" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+            <div className="flex items-center mb-2">
+              <ClipboardList className="h-6 w-6 mr-3 text-blue-600" />
+              <h2 className="text-xl font-semibold">Audit Logs</h2>
+            </div>
+            <p className="text-gray-600">View system activity and user actions</p>
           </Link>
         </div>
       </div>

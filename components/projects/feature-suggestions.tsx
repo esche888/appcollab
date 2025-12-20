@@ -100,17 +100,17 @@ export function FeatureSuggestions({ projectId }: FeatureSuggestionsProps) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold flex items-center">
-          <Lightbulb className="h-5 w-5 mr-2" />
+        <h2 className="text-2xl font-bold text-purple-900 flex items-center">
+          <Lightbulb className="h-6 w-6 mr-2 text-purple-600" />
           Feature Suggestions
         </h2>
-        <Button size="sm" onClick={() => setShowForm(!showForm)}>
+        <Button size="sm" onClick={() => setShowForm(!showForm)} className="bg-purple-600 hover:bg-purple-700 text-white">
           {showForm ? 'Cancel' : 'Suggest Feature'}
         </Button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-blue-50 rounded-lg p-4 space-y-3">
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg p-4 space-y-3 border border-purple-200 shadow-md">
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Feature Title
@@ -150,11 +150,11 @@ export function FeatureSuggestions({ projectId }: FeatureSuggestionsProps) {
       )}
 
       {suggestions.length === 0 ? (
-        <p className="text-gray-600">No feature suggestions yet.</p>
+        <p className="text-purple-800 font-medium">No feature suggestions yet.</p>
       ) : (
         <div className="space-y-3">
           {suggestions.map((suggestion) => (
-            <div key={suggestion.id} className="bg-gray-50 rounded-lg p-4">
+            <div key={suggestion.id} className="bg-white rounded-lg p-4 border border-purple-200 shadow-md">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">{suggestion.title}</h3>
@@ -165,13 +165,13 @@ export function FeatureSuggestions({ projectId }: FeatureSuggestionsProps) {
                 </span>
               </div>
 
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-purple-100">
                 <span className="text-sm text-gray-600">
                   by {suggestion.profiles.username}
                 </span>
                 <button
                   onClick={() => handleUpvote(suggestion.id)}
-                  className="inline-flex items-center text-sm text-gray-600 hover:text-blue-600"
+                  className="inline-flex items-center text-sm text-purple-600 hover:text-purple-800 font-medium"
                 >
                   <ThumbsUp className="h-4 w-4 mr-1" />
                   {suggestion.upvotes}

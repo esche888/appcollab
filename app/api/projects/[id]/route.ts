@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { Project } from '@/types/database'
+import { auditService } from '@/lib/audit/audit-service'
 
 export async function GET(
   request: Request,
@@ -29,6 +30,16 @@ export async function GET(
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 
+  // Filter out soft-deleted gaps and contributors
+  if (data && data.project_gaps) {
+    data.project_gaps = data.project_gaps
+      .filter((gap: any) => !gap.deleted_at)
+      .map((gap: any) => ({
+        ...gap,
+        gap_contributors: gap.gap_contributors?.filter((contributor: any) => !contributor.deleted_at) || []
+      }))
+  }
+
   return NextResponse.json({ success: true, data })
 }
 
@@ -46,12 +57,12 @@ export async function PUT(
   }
 
   const body = await request.json()
-  const { title, short_description, full_description, status } = body
+  const { title, short_description, full_description, website_url, github_url, status } = body
 
-  // Check if user is owner
+  // Check if user is owner and get current status
   const { data: project } = await supabase
     .from('projects')
-    .select('owner_ids')
+    .select('owner_ids, status, title')
     .eq('id', id)
     .single()
 
@@ -59,12 +70,16 @@ export async function PUT(
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
   }
 
+  const oldStatus = project.status
+
   const { data, error } = await supabase
     .from('projects')
     .update({
       title,
       short_description,
       full_description,
+      website_url,
+      github_url,
       status,
     })
     .eq('id', id)
@@ -74,6 +89,43 @@ export async function PUT(
 
   if (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+
+  // Log project update
+  await auditService.logProjectAction(
+    user.id,
+    'project_updated',
+    id,
+    {
+      title,
+      status,
+      oldStatus,
+    }
+  )
+
+  // Log archiving if status changed to archived
+  if (status === 'archived' && oldStatus !== 'archived') {
+    await auditService.logProjectAction(
+      user.id,
+      'project_archived',
+      id,
+      {
+        title,
+      }
+    )
+  }
+
+  // Log unarchiving if status changed from archived
+  if (oldStatus === 'archived' && status !== 'archived') {
+    await auditService.logProjectAction(
+      user.id,
+      'project_unarchived',
+      id,
+      {
+        title,
+        newStatus: status,
+      }
+    )
   }
 
   return NextResponse.json({ success: true, data: data as Project })
@@ -92,10 +144,10 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Check if user is owner
+  // Check if user is owner and get project details
   const { data: project } = await supabase
     .from('projects')
-    .select('owner_ids')
+    .select('owner_ids, title')
     .eq('id', id)
     .single()
 
@@ -112,6 +164,16 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
+
+  // Log project deletion
+  await auditService.logProjectAction(
+    user.id,
+    'project_deleted',
+    id,
+    {
+      title: project.title,
+    }
+  )
 
   return NextResponse.json({ success: true })
 }

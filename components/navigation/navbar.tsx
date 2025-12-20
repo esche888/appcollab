@@ -22,16 +22,18 @@ export function Navbar() {
 
   const navItems = [
     { href: '/projects', label: 'Projects' },
+    { href: '/best-practices', label: 'Best Practices' },
+    { href: '/feedback', label: 'Feedback' },
   ]
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <nav className="glass-effect border-b border-white/20 sticky top-0 z-40 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <Link
               href="/projects"
-              className="flex items-center px-2 text-xl font-bold text-gray-900"
+              className="flex items-center px-2 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-500 hover:to-purple-500 transition-all"
             >
               AppCollab
             </Link>
@@ -41,10 +43,10 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-all ${
                     pathname === item.href
-                      ? 'border-blue-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      ? 'border-blue-500 text-gray-900 font-semibold'
+                      : 'border-transparent text-gray-600 hover:border-blue-300 hover:text-gray-900'
                   }`}
                 >
                   {item.label}
@@ -61,6 +63,7 @@ export function Navbar() {
               size="icon"
               onClick={handleLogout}
               title="Logout"
+              className="hover:bg-blue-50 transition-colors"
             >
               <LogOut className="h-5 w-5" />
             </Button>

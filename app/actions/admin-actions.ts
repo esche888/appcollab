@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { auditService } from '@/lib/audit/audit-service'
 
 export type AdminCreationData = {
     email: string
@@ -65,6 +66,18 @@ export async function createAdminUser(data: AdminCreationData) {
         // Cleanup if possible? Or just return error
         return { error: 'User created but failed to set admin role: ' + updateError.message }
     }
+
+    // Log user creation
+    await auditService.logUserAction(
+        user.id,
+        'user_created',
+        newUser.user.id,
+        {
+            email: data.email,
+            fullName: data.fullName,
+            role: 'admin',
+        }
+    )
 
     revalidatePath('/admin/users')
     return { success: true }

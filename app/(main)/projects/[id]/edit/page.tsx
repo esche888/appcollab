@@ -17,11 +17,12 @@ const gapTypes = [
 ]
 
 const statuses = [
+  { value: 'draft', label: 'Draft (Private)' },
   { value: 'idea', label: 'Idea Stage' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'seeking_help', label: 'Seeking Help' },
   { value: 'on_hold', label: 'On Hold' },
   { value: 'completed', label: 'Completed' },
+  { value: 'archived', label: 'Archived' },
 ]
 
 type Project = {
@@ -29,6 +30,8 @@ type Project = {
   title: string
   short_description: string
   full_description: string | null
+  website_url: string | null
+  github_url: string | null
   owner_ids: string[]
   status: string
   project_gaps?: Array<{
@@ -50,6 +53,8 @@ export default function EditProjectPage() {
   const [title, setTitle] = useState('')
   const [shortDescription, setShortDescription] = useState('')
   const [fullDescription, setFullDescription] = useState('')
+  const [websiteUrl, setWebsiteUrl] = useState('')
+  const [githubUrl, setGithubUrl] = useState('')
   const [status, setStatus] = useState('idea')
   const [selectedGaps, setSelectedGaps] = useState<string[]>([])
   const [gapDescriptions, setGapDescriptions] = useState<Record<string, string>>({})
@@ -74,6 +79,8 @@ export default function EditProjectPage() {
           setTitle(projectData.title)
           setShortDescription(projectData.short_description)
           setFullDescription(projectData.full_description || '')
+          setWebsiteUrl(projectData.website_url || '')
+          setGithubUrl(projectData.github_url || '')
           setStatus(projectData.status)
 
           // Load gaps
@@ -125,6 +132,8 @@ export default function EditProjectPage() {
           title,
           short_description: shortDescription,
           full_description: fullDescription,
+          website_url: websiteUrl || null,
+          github_url: githubUrl || null,
           status,
         }),
       })
@@ -236,6 +245,34 @@ export default function EditProjectPage() {
           </div>
 
           <div>
+            <label htmlFor="websiteUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              Website URL
+            </label>
+            <input
+              id="websiteUrl"
+              type="url"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              placeholder="https://example.com"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="githubUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              GitHub URL
+            </label>
+            <input
+              id="githubUrl"
+              type="url"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              placeholder="https://github.com/username/repo"
+            />
+          </div>
+
+          <div>
             <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
               Project Status *
             </label>
@@ -251,6 +288,11 @@ export default function EditProjectPage() {
                 </option>
               ))}
             </select>
+            {status === 'archived' && (
+              <p className="text-sm text-orange-600 mt-1">
+                Archived projects are only visible to you and administrators.
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end gap-4 pt-4 border-t">

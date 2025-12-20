@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { aiService } from '@/lib/ai/ai-service'
+import { auditService } from '@/lib/audit/audit-service'
 
 export async function GET() {
   const supabase = await createClient()
@@ -66,6 +67,9 @@ export async function PUT(request: Request) {
     )
   }
 
+  // Get current active model for logging
+  const previousModel = await aiService.getActiveModel()
+
   // Update or insert AI settings
   const { data, error } = await supabase
     .from('ai_settings')
@@ -80,6 +84,16 @@ export async function PUT(request: Request) {
   if (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
+
+  // Log AI settings change
+  await auditService.logSettingsAction(
+    user.id,
+    'ai_settings_changed',
+    {
+      previousModel,
+      newModel: activeModel,
+    }
+  )
 
   return NextResponse.json({ success: true, data })
 }

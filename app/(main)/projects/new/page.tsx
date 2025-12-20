@@ -15,9 +15,9 @@ const gapTypes = [
 ]
 
 const statuses = [
+  { value: 'draft', label: 'Draft (Private)' },
   { value: 'idea', label: 'Idea Stage' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'seeking_help', label: 'Seeking Help' },
   { value: 'on_hold', label: 'On Hold' },
 ]
 
@@ -29,7 +29,9 @@ export default function NewProjectPage() {
   const [title, setTitle] = useState('')
   const [shortDescription, setShortDescription] = useState('')
   const [fullDescription, setFullDescription] = useState('')
-  const [status, setStatus] = useState('idea')
+  const [websiteUrl, setWebsiteUrl] = useState('')
+  const [githubUrl, setGithubUrl] = useState('')
+  const [status, setStatus] = useState('draft')
   const [selectedGaps, setSelectedGaps] = useState<string[]>([])
   const [gapDescriptions, setGapDescriptions] = useState<Record<string, string>>({})
 
@@ -61,6 +63,8 @@ export default function NewProjectPage() {
           title,
           short_description: shortDescription,
           full_description: fullDescription,
+          website_url: websiteUrl || null,
+          github_url: githubUrl || null,
           status,
           gaps,
         }),
@@ -137,6 +141,34 @@ export default function NewProjectPage() {
               onChange={(e) => setFullDescription(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               placeholder="Describe your project in detail..."
+            />
+          </div>
+
+          <div>
+            <label htmlFor="websiteUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              Website URL
+            </label>
+            <input
+              id="websiteUrl"
+              type="url"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              placeholder="https://example.com"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="githubUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              GitHub URL
+            </label>
+            <input
+              id="githubUrl"
+              type="url"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              placeholder="https://github.com/username/repo"
             />
           </div>
 

@@ -34,6 +34,7 @@ export async function POST(
       project_id: projectId,
       gap_type,
       description,
+      status: 'open',
     })
     .select()
     .single()
