@@ -74,36 +74,83 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 The application uses the following main tables:
 
 - **profiles** - User profiles with skills inventory
-- **projects** - Hackathon projects with multi-owner support
-- **project_gaps** - Skill gaps/needs for projects
+- **projects** - Hackathon projects with multi-owner support, website URLs, and GitHub links
+- **project_gaps** - Skill gaps/needs for projects with status tracking
 - **gap_contributors** - Users who tagged themselves to help
 - **feedback** - Threaded feedback with titles (supports replies)
 - **feature_suggestions** - Feature suggestions with upvotes
+- **favorite_projects** - User favorites for quick access
+- **best_practices** - Community best practices sharing
+- **app_feedback** - Platform feedback and suggestions
+- **audit_logs** - System activity and user action tracking
 - **ai_settings** - AI model configuration (admin)
 - **ai_usage_logs** - AI usage tracking
 
 All tables support soft deletes via `deleted_at` timestamp.
 
 **Latest Features**:
-- ✅ Threaded feedback comments (parent/child relationships)
-- ✅ Feedback titles for top-level comments
-- ✅ Full CRUD operations for project owners
-- ✅ Gap management (add, edit, delete)
+- ✅ Project website and GitHub URL links
+- ✅ Favorites system with filtering
+- ✅ Gap status management (open/filled/suspended)
+- ✅ Open gaps count indicator on project cards
+- ✅ Best practices sharing with upvotes
+- ✅ Audit logging for admin oversight
+- ✅ App feedback system
+- ✅ Improved UI with gradient designs
 
 See `DATABASE_SETUP.md` for complete schema documentation and setup instructions.
+
+### Required Database Migrations
+
+After setting up the initial schema, run these migrations:
+
+```sql
+-- Add gap status field
+ALTER TABLE project_gaps ADD COLUMN status TEXT NOT NULL DEFAULT 'open';
+ALTER TABLE project_gaps ADD CONSTRAINT project_gaps_status_check
+  CHECK (status IN ('open', 'filled', 'suspended'));
+
+-- Add project URL fields
+ALTER TABLE projects ADD COLUMN website_url TEXT;
+ALTER TABLE projects ADD COLUMN github_url TEXT;
+
+-- Update project status constraint (removes 'seeking_help')
+ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_status_check;
+ALTER TABLE projects ADD CONSTRAINT projects_status_check
+  CHECK (status IN ('draft', 'idea', 'in_progress', 'on_hold', 'completed', 'archived'));
+
+-- Create favorites table
+CREATE TABLE favorite_projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, project_id)
+);
+CREATE INDEX idx_favorite_projects_user_id ON favorite_projects(user_id);
+CREATE INDEX idx_favorite_projects_project_id ON favorite_projects(project_id);
+```
+
+See migration files in `/supabase-migrations/` for additional features.
 
 ## Features
 
 ### Core Features
-- User authentication (email/password)
+- User authentication (email/password) with audit logging
 - User profiles with skills inventory
-- Project registration with status tracking
+- Project registration with status tracking (draft, idea, in_progress, on_hold, completed, archived)
+- Project website and GitHub repository links
 - Full CRUD operations for project owners (Create, Read, Update, Delete)
 - Gap/need management (idea assessment, UX design, development, deployment, commercialization, marketing)
+- Gap status tracking (open, filled, suspended)
 - Add, edit, and delete gaps (project owners only)
 - Contributor tagging ("tag yourself" to help)
 - Threaded feedback system with titles and replies
 - Feature suggestions with upvoting
+- **Favorites system** - Star projects for quick access and filter by favorites
+- **Open gaps indicator** - Visual badges showing number of open gaps on project cards
+- **Best practices sharing** - Community knowledge base with categories and upvoting
+- **App feedback** - Users can submit feedback and suggestions for the platform
 
 ### AI Enhancements
 - Feedback enhancement (improve clarity and tone)
@@ -114,10 +161,12 @@ See `DATABASE_SETUP.md` for complete schema documentation and setup instructions
 - Smart project summaries
 
 ### Admin Features
+- **Audit logs** - Comprehensive system activity tracking and export
 - Historical records and usage tracking
 - AI model switching (ChatGPT, Gemini, Claude)
 - Usage statistics and metrics
 - User activity oversight
+- Admin dashboard with system metrics
 
 ### Technical Features
 - Autosave on all forms
@@ -125,24 +174,42 @@ See `DATABASE_SETUP.md` for complete schema documentation and setup instructions
 - Token usage tracking and display
 - Externalized AI prompts (hot-reloadable)
 - Mobile-ready API architecture
-- Comprehensive logging
+- Comprehensive logging and audit trails
 - Row-level security (RLS)
+- Gradient UI design system
+- Real-time updates and state management
+- Client-side filtering and search
 
 ## Project Structure
 
 ```
 /app
-  /(auth)         - Authentication pages
+  /(auth)         - Authentication pages (login, signup)
   /(main)         - Main application pages
+    /projects     - Project list, detail, create, edit
+    /best-practices - Best practices sharing
+    /feedback     - Platform feedback
+    /admin        - Admin dashboard and audit logs
   /api            - API routes
+    /projects     - Project CRUD and gaps
+    /favorites    - Favorites management
+    /best-practices - Best practices CRUD
+    /app-feedback - Platform feedback
+    /admin        - Admin functions and audit logs
 /components       - React components
+  /projects       - Project cards and features
+  /feedback       - Feedback forms and lists
+  /best-practices - Best practice components
+  /admin          - Admin components
 /lib
   /supabase       - Supabase clients
   /ai             - AI providers and services
+  /audit          - Audit logging service
   /db             - Database queries
   /utils          - Utility functions
 /prompts          - Externalized AI prompts
 /types            - TypeScript type definitions
+/supabase-migrations - Database migration files
 ```
 
 ## Development
