@@ -24,6 +24,7 @@ export function Navbar() {
   const navItems = [
     { href: '/projects', label: 'Projects' },
     { href: '/best-practices', label: 'Best Practices' },
+    { href: '/contributors', label: 'Contributors' },
   ]
 
   return (
@@ -50,11 +51,10 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-all ${
-                    pathname === item.href
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-all ${pathname === item.href
                       ? 'border-appcollab-teal text-gray-900 font-semibold'
                       : 'border-transparent text-gray-600 hover:border-appcollab-blue hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   {item.label}
                 </Link>

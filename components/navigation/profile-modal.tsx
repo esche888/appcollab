@@ -23,6 +23,21 @@ type Profile = {
   bio: string | null
   skills: string[]
   avatar_url: string | null
+  contributions?: {
+    id: string
+    gap_id: string
+    status: string
+    project_gaps: {
+      id: string
+      project_id: string
+      gap_type: string
+      description: string
+      projects: {
+        id: string
+        title: string
+      }
+    }
+  }[]
 }
 
 export function ProfileModal() {
@@ -144,14 +159,13 @@ export function ProfileModal() {
         ) : (
           <div className="space-y-4 py-4">
             {saveStatus !== 'idle' && (
-              <div className={`text-sm text-center ${
-                saveStatus === 'saving' ? 'text-gray-500' :
+              <div className={`text-sm text-center ${saveStatus === 'saving' ? 'text-gray-500' :
                 saveStatus === 'saved' ? 'text-green-600' :
-                'text-red-600'
-              }`}>
+                  'text-red-600'
+                }`}>
                 {saveStatus === 'saving' ? 'Saving...' :
-                 saveStatus === 'saved' ? 'Saved' :
-                 'Error saving'}
+                  saveStatus === 'saved' ? 'Saved' :
+                    'Error saving'}
               </div>
             )}
 
@@ -222,6 +236,44 @@ export function ProfileModal() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* My Commitments Section */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                My Commitments
+              </label>
+              {profile && profile.contributions && profile.contributions.length > 0 ? (
+                <div className="space-y-3 max-h-[200px] overflow-y-auto p-2 border rounded-md bg-gray-50">
+                  {profile.contributions.map((contribution) => (
+                    <div key={contribution.id} className="p-3 bg-white rounded shadow-sm border border-gray-100">
+                      <div className="text-sm font-medium text-gray-900">
+                        {contribution.project_gaps.gap_type.replace('_', ' ')}
+                      </div>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-1">
+                        {contribution.project_gaps.description}
+                      </p>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-appcollab-teal-dark font-medium">
+                          at {contribution.project_gaps.projects.title}
+                        </span>
+                        <a
+                          href={`/projects/${contribution.project_gaps.project_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          View Project
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 italic p-2 border rounded-md bg-gray-50 text-center">
+                  You haven't signed up for any project gaps yet.
+                </p>
+              )}
             </div>
 
             <div className="pt-4 border-t">

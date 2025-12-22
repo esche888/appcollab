@@ -34,14 +34,17 @@ interface FeatureSuggestionsProps {
   projectId: string
   showForm: boolean
   setShowForm: (show: boolean) => void
+  isOwner: boolean
 }
 
-export function FeatureSuggestions({ projectId, showForm, setShowForm }: FeatureSuggestionsProps) {
+export function FeatureSuggestions({ projectId, showForm, setShowForm, isOwner }: FeatureSuggestionsProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // ... (previous load functions remain)
 
   const loadVotesForSuggestions = async (suggestionItems: Suggestion[]): Promise<Suggestion[]> => {
     return Promise.all(
@@ -139,6 +142,29 @@ export function FeatureSuggestions({ projectId, showForm, setShowForm }: Feature
     }
   }
 
+  const handleStatusUpdate = async (suggestionId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/suggestions/${suggestionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setSuggestions(prev => prev.map(s =>
+          s.id === suggestionId ? { ...s, status: newStatus } : s
+        ))
+      } else {
+        alert(result.error || 'Failed to update status')
+      }
+    } catch (err) {
+      // alert(err instanceof Error ? err.message : 'Failed to update status')
+      console.error(err)
+    }
+  }
+
   if (loading) {
     return <p className="text-gray-600">Loading feature suggestions...</p>
   }
@@ -147,6 +173,7 @@ export function FeatureSuggestions({ projectId, showForm, setShowForm }: Feature
     <div className="space-y-4">
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-lg p-4 space-y-3 border border-purple-200 shadow-md">
+          {/* ...Form fields... */}
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Feature Title
@@ -196,9 +223,23 @@ export function FeatureSuggestions({ projectId, showForm, setShowForm }: Feature
                   <h3 className="font-semibold text-gray-900">{suggestion.title}</h3>
                   <p className="text-sm text-gray-600 mt-1">{suggestion.description}</p>
                 </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[suggestion.status as keyof typeof statusColors]}`}>
-                  {suggestion.status}
-                </span>
+
+                {isOwner ? (
+                  <select
+                    value={suggestion.status}
+                    onChange={(e) => handleStatusUpdate(suggestion.id, e.target.value)}
+                    className={`ml-2 px-2 py-1 rounded text-xs font-medium border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[suggestion.status as keyof typeof statusColors]}`}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="implemented">Implemented</option>
+                  </select>
+                ) : (
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[suggestion.status as keyof typeof statusColors]}`}>
+                    {suggestion.status}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-purple-100">
@@ -208,11 +249,10 @@ export function FeatureSuggestions({ projectId, showForm, setShowForm }: Feature
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleVote(suggestion.id, 'up')}
-                    className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors ${
-                      suggestion.votes?.userVote === 'up'
+                    className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors ${suggestion.votes?.userVote === 'up'
                         ? 'bg-green-100 text-green-700 font-semibold'
                         : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
-                    }`}
+                      }`}
                     title="Thumbs up"
                   >
                     <ThumbsUp className={`h-4 w-4 ${suggestion.votes?.userVote === 'up' ? 'fill-current' : ''}`} />
@@ -220,11 +260,10 @@ export function FeatureSuggestions({ projectId, showForm, setShowForm }: Feature
                   </button>
                   <button
                     onClick={() => handleVote(suggestion.id, 'down')}
-                    className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors ${
-                      suggestion.votes?.userVote === 'down'
+                    className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors ${suggestion.votes?.userVote === 'down'
                         ? 'bg-red-100 text-red-700 font-semibold'
                         : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
-                    }`}
+                      }`}
                     title="Thumbs down"
                   >
                     <ThumbsDown className={`h-4 w-4 ${suggestion.votes?.userVote === 'down' ? 'fill-current' : ''}`} />

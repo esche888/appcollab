@@ -24,18 +24,58 @@ export default function ProjectsPage() {
   const [showArchived, setShowArchived] = useState(false)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
 
-  // Fetch current user ID and role
+  // Load filters from profile on mount
   useEffect(() => {
-    async function getUserId() {
-      const response = await fetch('/api/profile')
-      const result = await response.json()
-      if (result.success) {
-        setUserId(result.data.id)
-        setUserRole(result.data.role)
+    async function loadUserAndFilters() {
+      try {
+        const response = await fetch('/api/profile')
+        const result = await response.json()
+        if (result.success) {
+          setUserId(result.data.id)
+          setUserRole(result.data.role)
+
+          if (result.data.project_filters) {
+            const filters = result.data.project_filters
+            if (filters.status) setStatusFilter(filters.status)
+            if (filters.ownerId) setSelectedOwnerId(filters.ownerId)
+            if (filters.showArchived !== undefined) setShowArchived(filters.showArchived)
+            if (filters.favoritesOnly !== undefined) setFavoritesOnly(filters.favoritesOnly)
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error)
       }
     }
-    getUserId()
+    loadUserAndFilters()
   }, [])
+
+  // Save filters when changed (debounced/effect based)
+  useEffect(() => {
+    if (!userId) return
+
+    const saveFilters = async () => {
+      try {
+        await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_filters: {
+              status: statusFilter,
+              ownerId: selectedOwnerId,
+              showArchived,
+              favoritesOnly
+            }
+          })
+        })
+      } catch (error) {
+        console.error('Error saving filters:', error)
+      }
+    }
+
+    // Debounce save to avoid too many requests
+    const timeoutId = setTimeout(saveFilters, 1000)
+    return () => clearTimeout(timeoutId)
+  }, [statusFilter, selectedOwnerId, showArchived, favoritesOnly, userId])
 
   // Fetch all projects to extract unique owners
   useEffect(() => {
@@ -124,9 +164,9 @@ export default function ProjectsPage() {
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-appcollab-teal/10 via-appcollab-blue/10 to-appcollab-green-light/10">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
+        {/* Header Section with Integrated Filters */}
         <div className="bg-gradient-to-r from-appcollab-teal-dark to-appcollab-blue rounded-2xl shadow-xl p-8 mb-8">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Projects</h1>
               <p className="text-white/90">Explore and collaborate on exciting projects</p>
@@ -138,86 +178,98 @@ export default function ProjectsPage() {
               </Button>
             </Link>
           </div>
-        </div>
 
-        {/* Show archived toggle - only for owners viewing their projects or admins */}
-        {(selectedOwnerId === userId || userRole === 'admin') && (
-          <div className="mb-6 bg-orange-50 border-2 border-orange-200 p-4 rounded-xl shadow-sm">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(e) => setShowArchived(e.target.checked)}
-                className="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500 border-orange-300 rounded transition-all"
-              />
-              <span className="text-sm font-medium text-orange-900">
-                Show archived projects
-                {userRole === 'admin' && selectedOwnerId === 'all' && ' (all users)'}
-              </span>
-            </label>
-          </div>
-        )}
+          {/* Integrated Filters */}
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
 
-        {/* Filters */}
-        <div className="mb-8 bg-white rounded-xl shadow-lg border-2 border-appcollab-teal/20">
-          <div className="bg-gradient-to-r from-appcollab-teal to-appcollab-blue p-4 rounded-t-xl">
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-white" />
-              <h2 className="text-lg font-semibold text-white">Filter Projects</h2>
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Owner Filter Dropdown */}
-              <select
-                id="owner-filter"
-                value={selectedOwnerId}
-                onChange={(e) => setSelectedOwnerId(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-appcollab-teal focus:border-transparent text-gray-900 bg-white font-medium transition-all"
-              >
-                <option value="all">All Owners</option>
-                {userId && (
-                  <option value={userId}>My Projects</option>
-                )}
-                <option disabled>─────────────</option>
-                {projectOwners
-                  .filter(owner => owner.id !== userId)
-                  .sort((a, b) => (a.username || '').localeCompare(b.username || ''))
-                  .map((owner) => (
-                    <option key={owner.id} value={owner.id}>
-                      {owner.username}
+            <div className="flex flex-wrap items-end gap-4">
+              {/* Owner Filter */}
+              <div className="space-y-1 flex-1 min-w-[200px]">
+                <select
+                  id="owner-filter"
+                  value={selectedOwnerId}
+                  onChange={(e) => setSelectedOwnerId(e.target.value)}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/70 font-medium transition-all [&>option]:text-gray-900"
+                >
+                  <option value="all">All Owners</option>
+                  {userId && (
+                    <option value={userId}>My Projects</option>
+                  )}
+                  <option disabled>─────────────</option>
+                  {projectOwners
+                    .filter(owner => owner.id !== userId)
+                    .sort((a, b) => (a.username || '').localeCompare(b.username || ''))
+                    .map((owner) => (
+                      <option key={owner.id} value={owner.id}>
+                        {owner.username}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Status Filter */}
+              <div className="space-y-1 flex-1 min-w-[200px]">
+                <select
+                  id="status-filter"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/70 font-medium transition-all [&>option]:text-gray-900"
+                >
+                  {statusFilters.map((f) => (
+                    <option key={f.value} value={f.value}>
+                      {f.label}
                     </option>
                   ))}
-              </select>
+                </select>
+              </div>
 
-              {/* Status Filter Dropdown */}
-              <select
-                id="status-filter"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-appcollab-teal focus:border-transparent text-gray-900 bg-white font-medium transition-all"
-              >
-                {statusFilters.map((f) => (
-                  <option key={f.value} value={f.value}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+              {/* Favorites Checkbox */}
+              <div>
+                <label className="flex items-center cursor-pointer bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-colors border border-white/10 h-[42px] whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={favoritesOnly}
+                    onChange={(e) => setFavoritesOnly(e.target.checked)}
+                    className="mr-3 h-4 w-4 text-appcollab-teal focus:ring-white/50 bg-white/20 border-white/40 rounded transition-all"
+                  />
+                  <span className="text-sm font-medium text-white">
+                    Only favorites
+                  </span>
+                </label>
+              </div>
 
-            {/* Favorites filter */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={favoritesOnly}
-                  onChange={(e) => setFavoritesOnly(e.target.checked)}
-                  className="mr-3 h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-yellow-300 rounded transition-all"
-                />
-                <span className="text-sm font-medium text-gray-900">
-                  Show only favorite projects
-                </span>
-              </label>
+              {/* Archived Checkbox (Conditional) */}
+              {(selectedOwnerId === userId || userRole === 'admin') && (
+                <div>
+                  <label className="flex items-center cursor-pointer bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition-colors border border-white/10 h-[42px] whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={showArchived}
+                      onChange={(e) => setShowArchived(e.target.checked)}
+                      className="mr-3 h-4 w-4 text-appcollab-teal focus:ring-white/50 bg-white/20 border-white/40 rounded transition-all"
+                    />
+                    <span className="text-sm font-medium text-white">
+                      Show archived
+                      {userRole === 'admin' && selectedOwnerId === 'all' && ' (all)'}
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {/* Reset Button */}
+              <div>
+                <button
+                  onClick={() => {
+                    setStatusFilter('all')
+                    setSelectedOwnerId('all')
+                    setShowArchived(false)
+                    setFavoritesOnly(false)
+                  }}
+                  className="h-[42px] px-4 py-2 text-sm font-medium text-white bg-white/10 hover:bg-white/20 rounded-lg transition-all border border-white/20 hover:border-white/40 whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+                >
+                  Reset Filters
+                </button>
+              </div>
             </div>
           </div>
         </div>

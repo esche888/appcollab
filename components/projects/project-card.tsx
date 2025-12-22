@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { Project } from '@/types/database'
 import { AlertCircle, Star } from 'lucide-react'
 import { useState } from 'react'
+import { UserProfileDialog } from '@/components/users/user-profile-dialog'
 
 const statusColors = {
   draft: 'bg-slate-100 text-slate-700 border border-slate-200',
@@ -70,8 +71,8 @@ export function ProjectCard({ project, onFavoriteChange }: ProjectCardProps) {
         >
           <Star
             className={`h-5 w-5 transition-colors ${isFavorited
-                ? 'fill-amber-400 text-amber-400'
-                : 'text-slate-400 hover:text-amber-400'
+              ? 'fill-amber-400 text-amber-400'
+              : 'text-slate-400 hover:text-amber-400'
               }`}
           />
         </button>
@@ -96,9 +97,19 @@ export function ProjectCard({ project, onFavoriteChange }: ProjectCardProps) {
 
         <div className="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-100 mt-auto">
           <span className="font-medium">{new Date(project.created_at).toLocaleDateString()}</span>
-          <span className="px-2 py-1 bg-gray-50 rounded-full font-medium">
+
+          <span className="px-2 py-1 bg-gray-50 rounded-full font-medium flex items-center gap-1 z-20 relative stop-propagation-area" onClick={(e) => e.preventDefault()}>
             {project.owner_profiles && project.owner_profiles.length > 0
-              ? project.owner_profiles.map(o => o.username).join(', ')
+              ? project.owner_profiles.map((o, i) => (
+                <span key={o.id}>
+                  <UserProfileDialog userId={o.id} username={o.username}>
+                    <span className="hover:text-blue-600 hover:underline cursor-pointer">
+                      {o.username}
+                    </span>
+                  </UserProfileDialog>
+                  {i < project.owner_profiles!.length - 1 && ', '}
+                </span>
+              ))
               : `${project.owner_ids.length} owner${project.owner_ids.length > 1 ? 's' : ''}`
             }
           </span>

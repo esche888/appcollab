@@ -8,20 +8,48 @@ export async function GET(
   const supabase = await createClient()
   const { id } = await params
 
-  const { data, error } = await supabase
+  // Fetch profile details
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url')
+    .select('id, username, full_name, avatar_url, bio, skills, role, created_at')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
 
-  if (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  if (profileError) {
+    return NextResponse.json({ success: false, error: profileError.message }, { status: 500 })
   }
 
-  if (!data) {
+  if (!profile) {
     return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ success: true, data })
+  // Fetch contributions (gaps the user is filling)
+  const { data: contributions, error: contributionsError } = await supabase
+    .from('gap_contributors')
+    .select(`
+      id,
+      gap_id,
+      status,
+      project_gaps!inner(
+        id,
+        gap_type,
+        description,
+        project_id,
+        projects!inner(
+          id,
+          title
+        )
+      )
+    `)
+    .eq('user_id', id)
+    .is('deleted_at', null)
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      ...profile,
+      contributions: contributions || []
+    }
+  })
 }

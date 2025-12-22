@@ -60,7 +60,7 @@ export async function DELETE(
   // Soft delete
   const { error } = await supabase
     .from('gap_contributors')
-    .update({ deleted_at: new Date().toISOString() })
+    .delete()
     .eq('gap_id', gapId)
     .eq('user_id', user.id)
 

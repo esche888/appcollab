@@ -9,6 +9,8 @@ export type Profile = {
   created_at: string
   updated_at: string
   deleted_at: string | null
+  project_filters?: Record<string, any>
+  best_practice_filters?: Record<string, any>
 }
 
 export type Project = {
@@ -77,10 +79,22 @@ export type BestPractice = {
   title: string
   description: string
   category: 'architecture' | 'development' | 'testing' | 'deployment' | 'security' |
-            'ux_design' | 'performance' | 'documentation' | 'collaboration' |
-            'project_management' | 'other'
+  'ux_design' | 'performance' | 'documentation' | 'collaboration' |
+  'project_management' | 'other'
   upvotes: number
   status: 'draft' | 'published' | 'archived'
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
+export type BestPracticeRequest = {
+  id: string
+  user_id: string
+  title: string
+  description: string
+  upvotes: number
+  status: 'open' | 'in_progress' | 'completed'
   created_at: string
   updated_at: string
   deleted_at: string | null

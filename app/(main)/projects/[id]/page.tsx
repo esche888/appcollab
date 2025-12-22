@@ -343,10 +343,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="p-8 min-h-screen bg-gradient-to-br from-appcollab-teal/10 via-appcollab-blue/10 to-appcollab-green-light/10">
       <div className="max-w-6xl mx-auto">
-        <Link href="/projects" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 font-medium">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Projects
-        </Link>
+
 
         {/* Project Header */}
         <div className="bg-gradient-to-r from-appcollab-teal-dark to-appcollab-blue-dark rounded-2xl shadow-xl p-8 mb-6">
@@ -422,6 +419,9 @@ export default function ProjectDetailPage() {
               >
                 <AlertCircle className="h-6 w-6 mr-2 text-appcollab-orange" />
                 Help Needed
+                <span className="ml-2 bg-white/50 px-2 py-0.5 rounded-full text-sm font-medium">
+                  {project.project_gaps.filter(g => g.status === 'open').length}
+                </span>
                 {isHelpNeededExpanded ? (
                   <ChevronUp className="h-5 w-5 ml-2" />
                 ) : (
@@ -563,7 +563,7 @@ export default function ProjectDetailPage() {
               )}
             </div>
             {isFeatureSuggestionsExpanded && (
-              <FeatureSuggestions projectId={project.id} showForm={showFeatureForm} setShowForm={setShowFeatureForm} />
+              <FeatureSuggestions projectId={project.id} showForm={showFeatureForm} setShowForm={setShowFeatureForm} isOwner={isOwner || false} />
             )}
           </div>
 
