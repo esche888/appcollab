@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Brain, Copy, Check, Loader2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import type { ProjectWithGaps } from '@/app/(main)/projects/[id]/page'
 
 interface AIAssistantModalProps {
@@ -135,8 +136,8 @@ export function AIAssistantModal({
                     )}
                   </Button>
                 </div>
-                <div className="prose prose-sm max-w-none text-gray-800 whitespace-pre-wrap">
-                  {aiResponse}
+                <div className="prose prose-sm max-w-none text-gray-800">
+                  <ReactMarkdown>{aiResponse}</ReactMarkdown>
                 </div>
               </div>
 

@@ -78,27 +78,28 @@ export function ProjectCard({ project, onFavoriteChange }: ProjectCardProps) {
         </button>
         <div className="flex justify-between items-start mb-3 gap-2 pr-8">
           <h3 className="text-xl font-bold text-gray-900 group-hover:text-appcollab-teal-dark transition-colors flex-1">{project.title}</h3>
-          <div className="flex flex-col gap-2 items-end flex-shrink-0">
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold shadow-sm whitespace-nowrap ${statusColors[project.status]}`}>
-              {statusLabels[project.status]}
-            </span>
-            {(project.open_gaps_count ?? 0) > 0 && (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold shadow-sm whitespace-nowrap bg-appcollab-orange/20 text-orange-700 border border-appcollab-orange/40 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {project.open_gaps_count} open gap{project.open_gaps_count! > 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
         </div>
 
         <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed flex-grow">
           {project.short_description}
         </p>
 
-        <div className="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-100 mt-auto">
-          <span className="font-medium">{new Date(project.created_at).toLocaleDateString()}</span>
+        <div className="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-100 mt-auto gap-2">
+          <span className="font-medium whitespace-nowrap">{new Date(project.created_at).toLocaleDateString()}</span>
 
-          <span className="px-2 py-1 bg-gray-50 rounded-full font-medium flex items-center gap-1 z-20 relative stop-propagation-area" onClick={(e) => e.preventDefault()}>
+          <div className="flex items-center gap-2 flex-1 justify-center px-2">
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border shadow-sm whitespace-nowrap ${statusColors[project.status]}`}>
+              {statusLabels[project.status]}
+            </span>
+            {(project.open_gaps_count ?? 0) > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold shadow-sm whitespace-nowrap bg-appcollab-orange/20 text-orange-700 border border-appcollab-orange/40 flex items-center gap-1">
+                <AlertCircle className="h-2.5 w-2.5" />
+                {project.open_gaps_count} gap{project.open_gaps_count! > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          <span className="px-2 py-1 bg-gray-50 rounded-full font-medium flex items-center gap-1 z-20 relative stop-propagation-area whitespace-nowrap" onClick={(e) => e.preventDefault()}>
             {project.owner_profiles && project.owner_profiles.length > 0
               ? project.owner_profiles.map((o, i) => (
                 <span key={o.id}>

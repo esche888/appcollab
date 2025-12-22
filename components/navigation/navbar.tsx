@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { SettingsModal } from './settings-modal'
 import { ProfileModal } from './profile-modal'
+import { HelpModal } from './help-modal'
 import { LogOut } from 'lucide-react'
 
 export function Navbar() {
@@ -52,8 +53,8 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-all ${pathname === item.href
-                      ? 'border-appcollab-teal text-gray-900 font-semibold'
-                      : 'border-transparent text-gray-600 hover:border-appcollab-blue hover:text-gray-900'
+                    ? 'border-appcollab-teal text-gray-900 font-semibold'
+                    : 'border-transparent text-gray-600 hover:border-appcollab-blue hover:text-gray-900'
                     }`}
                 >
                   {item.label}
@@ -63,6 +64,7 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center space-x-4">
+            <HelpModal />
             <ProfileModal />
             <SettingsModal />
             <Button

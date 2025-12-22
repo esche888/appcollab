@@ -30,6 +30,28 @@ export async function GET(
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 
+  // Check if project is draft and user is not owner
+  const { data: { user } } = await supabase.auth.getUser()
+  if (data?.status === 'draft') {
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const isAdmin = profile?.role === 'admin'
+    const isOwner = data.owner_ids.includes(user.id)
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ success: false, error: 'Forbidden: Draft projects are only visible to owners' }, { status: 403 })
+    }
+  }
+
   // Filter out soft-deleted gaps and contributors
   if (data && data.project_gaps) {
     data.project_gaps = data.project_gaps

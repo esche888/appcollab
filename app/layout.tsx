@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AppCollab - Hackathon Project Collaboration",
-  description: "Find collaborators and fill skill gaps in your hackathon projects",
+  title: "AppCollab - Project Collaboration",
+  description:
+    "Find collaborators and fill skill gaps in your hackathon projects",
   icons: {
-    icon: '/appcollab-logo.png',
-    apple: '/appcollab-logo.png',
+    icon: "/appcollab-logo.png",
+    apple: "/appcollab-logo.png",
   },
 };
 
@@ -17,9 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

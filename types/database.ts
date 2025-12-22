@@ -73,6 +73,41 @@ export type FeatureSuggestion = {
   deleted_at: string | null
 }
 
+export type FeatureSuggestionComment = {
+  id: string
+  suggestion_id: string
+  user_id: string
+  parent_id: string | null
+  content: string
+  created_at: string
+  updated_at: string
+  deleted_at: string | null
+}
+
+export type FeatureSuggestionCommentVote = {
+  id: string
+  comment_id: string
+  user_id: string
+  vote_type: 'up' | 'down'
+  created_at: string
+  updated_at: string
+}
+
+export type FeatureSuggestionCommentWithDetails = FeatureSuggestionComment & {
+  profiles: {
+    id: string
+    username: string
+    full_name: string | null
+    avatar_url: string | null
+  }
+  replies?: FeatureSuggestionCommentWithDetails[]
+  votes?: {
+    upvotes: number
+    downvotes: number
+    userVote: 'up' | 'down' | null
+  }
+}
+
 export type BestPractice = {
   id: string
   user_id: string

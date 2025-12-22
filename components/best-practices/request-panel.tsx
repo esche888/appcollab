@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus, ThumbsUp, X } from 'lucide-react'
 import type { BestPracticeRequest } from '@/types/database'
+import { UserProfileDialog } from '@/components/users/user-profile-dialog'
 
 export function RequestPanel() {
     const [requests, setRequests] = useState<BestPracticeRequest[]>([])
@@ -162,7 +163,7 @@ export function RequestPanel() {
                 </form>
             )}
 
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto pr-2">
                 {loading ? (
                     <div className="text-center py-8 text-gray-500">Loading requests...</div>
                 ) : requests.length === 0 ? (
@@ -171,8 +172,8 @@ export function RequestPanel() {
                     </div>
                 ) : (
                     requests.map((request) => (
-                        <div key={request.id} className="group bg-white p-4 rounded-lg border border-gray-100 hover:border-appcollab-teal/30 hover:shadow-md transition-all">
-                            <div className="flex gap-4">
+                        <div key={request.id} className="group bg-white p-4 rounded-lg border border-gray-100 hover:border-appcollab-teal/30 hover:shadow-md transition-all h-full flex flex-col">
+                            <div className="flex gap-4 h-full">
                                 <button
                                     onClick={() => handleVote(request.id)}
                                     className={`flex flex-col items-center justify-center min-w-[3rem] h-12 rounded-lg border transition-all ${userVotes[request.id]
@@ -186,13 +187,25 @@ export function RequestPanel() {
                                 <div className="flex-1">
                                     <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-appcollab-blue-dark transition-colors">{request.title}</h3>
                                     <p className="text-sm text-gray-600 leading-relaxed">{request.description}</p>
-                                    <div className="mt-2 flex items-center gap-2">
-                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider ${request.status === 'completed' ? 'bg-appcollab-green/20 text-appcollab-green' :
-                                            request.status === 'in_progress' ? 'bg-appcollab-blue/20 text-appcollab-blue-dark' :
-                                                'bg-gray-100 text-gray-600'
-                                            }`}>
-                                            {request.status.replace('_', ' ')}
-                                        </span>
+                                    <div className="mt-2 flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider ${request.status === 'completed' ? 'bg-appcollab-green/20 text-appcollab-green' :
+                                                request.status === 'in_progress' ? 'bg-appcollab-blue/20 text-appcollab-blue-dark' :
+                                                    'bg-gray-100 text-gray-600'
+                                                }`}>
+                                                {request.status.replace('_', ' ')}
+                                            </span>
+                                        </div>
+                                        {request.profiles && (
+                                            <div className="text-xs text-gray-500 stop-propagation-area" onClick={(e) => e.stopPropagation()}>
+                                                <span className="mr-1">Requested by:</span>
+                                                <UserProfileDialog userId={request.profiles.id} username={request.profiles.username}>
+                                                    <span className="font-medium hover:text-blue-600 hover:underline cursor-pointer">
+                                                        {request.profiles.username}
+                                                    </span>
+                                                </UserProfileDialog>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

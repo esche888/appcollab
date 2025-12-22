@@ -15,17 +15,54 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { status } = body
+    const { status, title, description } = body
 
-    // We should verify that the user is the owner of the project this suggestion belongs to.
-    // However, relying on RLS is safer and simpler if the policy "Project owners can update suggestion status" is correctly set up.
-    // Based on the schema I read earlier, RLS check:
-    // CREATE POLICY "Project owners can update suggestion status" ON feature_suggestions FOR UPDATE
-    // USING (EXISTS (SELECT 1 FROM projects WHERE projects.id = feature_suggestions.project_id AND auth.uid() = ANY(projects.owner_ids)));
+    // Fetch suggestion to verify permissions
+    const { data: suggestion, error: fetchError } = await supabase
+        .from('feature_suggestions')
+        .select(`
+            *,
+            projects (
+                owner_ids
+            )
+        `)
+        .eq('id', id)
+        .single()
+
+    if (fetchError || !suggestion) {
+        return NextResponse.json({ success: false, error: 'Suggestion not found' }, { status: 404 })
+    }
+
+    const isAuthor = suggestion.user_id === user.id
+    // @ts-ignore - Supabase type inference might miss deep join arrays
+    const isProjectOwner = suggestion.projects?.owner_ids?.includes(user.id)
+
+    const updates: any = {}
+
+    // Status update: Project Owners or Author
+    if (status !== undefined) {
+        if (!isProjectOwner && !isAuthor) {
+            return NextResponse.json({ success: false, error: 'Only project owners or the author can change status' }, { status: 403 })
+        }
+        updates.status = status
+    }
+
+    // Content update: Author only
+    if (title !== undefined || description !== undefined) {
+        if (!isAuthor) {
+            return NextResponse.json({ success: false, error: 'Only the author can edit the suggestion' }, { status: 403 })
+        }
+        if (title) updates.title = title
+        if (description) updates.description = description
+    }
+
+    if (Object.keys(updates).length === 0) {
+        return NextResponse.json({ success: true, data: suggestion })
+    }
 
     const { data, error } = await supabase
         .from('feature_suggestions')
-        .update({ status })
+        .update(updates)
         .eq('id', id)
         .select()
         .single()

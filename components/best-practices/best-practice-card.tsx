@@ -28,7 +28,7 @@ interface BestPracticeCardProps {
 import { UserProfileDialog } from '@/components/users/user-profile-dialog'
 
 export function BestPracticeCard({ bestPractice }: BestPracticeCardProps) {
-  const authorName = bestPractice.profiles?.full_name || bestPractice.profiles?.username || 'Unknown'
+  const authorName = bestPractice.profiles?.username || bestPractice.profiles?.full_name || 'Unknown'
 
   return (
     <div className="group h-full block relative">
@@ -57,23 +57,26 @@ export function BestPracticeCard({ bestPractice }: BestPracticeCardProps) {
                 <ThumbsUp className="h-3 w-3 mr-1" />
                 {bestPractice.upvotes}
               </span>
-              <span>by </span>
+              <div className="flex items-center gap-1 stop-propagation-area" onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}>
+                <span>by </span>
+                {bestPractice.profiles?.id ? (
+                  <UserProfileDialog userId={bestPractice.profiles.id} username={authorName}>
+                    <span className="font-medium hover:text-blue-600 hover:underline cursor-pointer">
+                      {authorName}
+                    </span>
+                  </UserProfileDialog>
+                ) : (
+                  <span>{authorName}</span>
+                )}
+              </div>
             </div>
             <span className="text-gray-400">{new Date(bestPractice.created_at).toLocaleDateString()}</span>
           </div>
         </div>
       </Link>
-
-      {/* User Profile Hook */}
-      <div className="absolute bottom-6 left-[120px] stop-propagation-area" onClick={(e) => e.stopPropagation()}>
-        {bestPractice.profiles?.id ? (
-          <UserProfileDialog userId={bestPractice.profiles.id} username={authorName}>
-            <span className="font-medium hover:text-blue-600 hover:underline">{authorName}</span>
-          </UserProfileDialog>
-        ) : (
-          <span>{authorName}</span>
-        )}
-      </div>
     </div>
   )
 }

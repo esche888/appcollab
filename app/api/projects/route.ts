@@ -38,6 +38,12 @@ export async function GET(request: Request) {
     `)
     .is('deleted_at', null)
 
+  // Restrict draft visibility:
+  // Non-admins can only see drafts if they are the owner
+  if (!isAdmin) {
+    query = query.or(`status.neq.draft,owner_ids.cs.{${user.id}}`)
+  }
+
   // Handle archived projects visibility
   if (!includeArchived) {
     // By default, exclude archived projects
