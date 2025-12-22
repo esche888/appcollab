@@ -2,19 +2,19 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, X } from 'lucide-react'
 
 interface FeedbackFormProps {
   projectId: string
   onFeedbackAdded: () => void
+  isExpanded: boolean
+  setIsExpanded: (expanded: boolean) => void
 }
 
-export function FeedbackForm({ projectId, onFeedbackAdded }: FeedbackFormProps) {
+export function FeedbackForm({ projectId, onFeedbackAdded, isExpanded, setIsExpanded }: FeedbackFormProps) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isExpanded, setIsExpanded] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,17 +52,7 @@ export function FeedbackForm({ projectId, onFeedbackAdded }: FeedbackFormProps) 
   }
 
   if (!isExpanded) {
-    return (
-      <div>
-        <Button
-          onClick={() => setIsExpanded(true)}
-          className="bg-green-600 hover:bg-green-700 text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Feedback
-        </Button>
-      </div>
-    )
+    return null
   }
 
   return (

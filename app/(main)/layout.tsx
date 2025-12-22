@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Navbar } from '@/components/navigation/navbar'
+import { FloatingFeedbackButton } from '@/components/app-feedback/floating-feedback-button'
 
 export default async function MainLayout({
   children,
@@ -20,6 +21,7 @@ export default async function MainLayout({
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <main>{children}</main>
+      <FloatingFeedbackButton />
     </div>
   )
 }

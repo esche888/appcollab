@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { ThumbsUp, Lightbulb } from 'lucide-react'
+import { ThumbsUp, ThumbsDown } from 'lucide-react'
 
 type Suggestion = {
   id: string
@@ -16,6 +16,11 @@ type Suggestion = {
     username: string
     full_name: string | null
   }
+  votes?: {
+    upvotes: number
+    downvotes: number
+    userVote: 'up' | 'down' | null
+  }
 }
 
 const statusColors = {
@@ -27,22 +32,39 @@ const statusColors = {
 
 interface FeatureSuggestionsProps {
   projectId: string
+  showForm: boolean
+  setShowForm: (show: boolean) => void
 }
 
-export function FeatureSuggestions({ projectId }: FeatureSuggestionsProps) {
+export function FeatureSuggestions({ projectId, showForm, setShowForm }: FeatureSuggestionsProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const loadVotesForSuggestions = async (suggestionItems: Suggestion[]): Promise<Suggestion[]> => {
+    return Promise.all(
+      suggestionItems.map(async (item) => {
+        // Load votes for this suggestion
+        const voteResponse = await fetch(`/api/suggestions/${item.id}/vote`)
+        const voteResult = await voteResponse.json()
+
+        return {
+          ...item,
+          votes: voteResult.success ? voteResult.data : { upvotes: 0, downvotes: 0, userVote: null }
+        }
+      })
+    )
+  }
 
   const loadSuggestions = async () => {
     const response = await fetch(`/api/projects/${projectId}/suggestions`)
     const result = await response.json()
 
     if (result.success) {
-      setSuggestions(result.data)
+      const suggestionsWithVotes = await loadVotesForSuggestions(result.data)
+      setSuggestions(suggestionsWithVotes)
     }
 
     setLoading(false)
@@ -83,13 +105,37 @@ export function FeatureSuggestions({ projectId }: FeatureSuggestionsProps) {
     }
   }
 
-  const handleUpvote = async (suggestionId: string) => {
-    const response = await fetch(`/api/suggestions/${suggestionId}/upvote`, {
-      method: 'POST',
-    })
+  const handleVote = async (suggestionId: string, voteType: 'up' | 'down') => {
+    try {
+      const response = await fetch(`/api/suggestions/${suggestionId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vote_type: voteType }),
+      })
 
-    if (response.ok) {
-      loadSuggestions()
+      const result = await response.json()
+
+      if (result.success) {
+        // Update the vote counts in the state
+        fetch(`/api/suggestions/${suggestionId}/vote`)
+          .then(res => res.json())
+          .then(voteResult => {
+            if (voteResult.success) {
+              setSuggestions(prevSuggestions => {
+                return prevSuggestions.map(s => {
+                  if (s.id === suggestionId) {
+                    return { ...s, votes: voteResult.data }
+                  }
+                  return s
+                })
+              })
+            }
+          })
+      } else {
+        alert(result.error || 'Failed to vote')
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to vote')
     }
   }
 
@@ -99,16 +145,6 @@ export function FeatureSuggestions({ projectId }: FeatureSuggestionsProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-purple-900 flex items-center">
-          <Lightbulb className="h-6 w-6 mr-2 text-purple-600" />
-          Feature Suggestions
-        </h2>
-        <Button size="sm" onClick={() => setShowForm(!showForm)} className="bg-purple-600 hover:bg-purple-700 text-white">
-          {showForm ? 'Cancel' : 'Suggest Feature'}
-        </Button>
-      </div>
-
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-lg p-4 space-y-3 border border-purple-200 shadow-md">
           <div>
@@ -169,13 +205,32 @@ export function FeatureSuggestions({ projectId }: FeatureSuggestionsProps) {
                 <span className="text-sm text-gray-600">
                   by {suggestion.profiles.username}
                 </span>
-                <button
-                  onClick={() => handleUpvote(suggestion.id)}
-                  className="inline-flex items-center text-sm text-purple-600 hover:text-purple-800 font-medium"
-                >
-                  <ThumbsUp className="h-4 w-4 mr-1" />
-                  {suggestion.upvotes}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleVote(suggestion.id, 'up')}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors ${
+                      suggestion.votes?.userVote === 'up'
+                        ? 'bg-green-100 text-green-700 font-semibold'
+                        : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+                    }`}
+                    title="Thumbs up"
+                  >
+                    <ThumbsUp className={`h-4 w-4 ${suggestion.votes?.userVote === 'up' ? 'fill-current' : ''}`} />
+                    <span className="text-sm">{suggestion.votes?.upvotes || 0}</span>
+                  </button>
+                  <button
+                    onClick={() => handleVote(suggestion.id, 'down')}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors ${
+                      suggestion.votes?.userVote === 'down'
+                        ? 'bg-red-100 text-red-700 font-semibold'
+                        : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
+                    }`}
+                    title="Thumbs down"
+                  >
+                    <ThumbsDown className={`h-4 w-4 ${suggestion.votes?.userVote === 'down' ? 'fill-current' : ''}`} />
+                    <span className="text-sm">{suggestion.votes?.downvotes || 0}</span>
+                  </button>
+                </div>
               </div>
             </div>
           ))}

@@ -86,16 +86,32 @@ export async function GET(request: Request) {
     filteredData = data?.filter((project: any) => favoritedProjectIds.has(project.id))
   }
 
-  // Add open gaps count and is_favorited to each project
+  // Fetch owner profiles for all projects
+  const allOwnerIds = new Set<string>()
+  filteredData?.forEach((project: any) => {
+    project.owner_ids?.forEach((ownerId: string) => allOwnerIds.add(ownerId))
+  })
+
+  const { data: ownerProfiles } = await supabase
+    .from('profiles')
+    .select('id, username, full_name')
+    .in('id', Array.from(allOwnerIds))
+
+  const ownerMap = new Map(ownerProfiles?.map(p => [p.id, p]) || [])
+
+  // Add open gaps count, is_favorited, and owner_profiles to each project
   const projectsWithMetadata = filteredData?.map((project: any) => {
     const openGapsCount = project.project_gaps?.filter(
       (gap: any) => !gap.deleted_at && gap.status === 'open'
     ).length || 0
 
+    const ownerProfiles = project.owner_ids?.map((ownerId: string) => ownerMap.get(ownerId)).filter(Boolean) || []
+
     return {
       ...project,
       open_gaps_count: openGapsCount,
       is_favorited: favoritedProjectIds.has(project.id),
+      owner_profiles: ownerProfiles,
     }
   })
 

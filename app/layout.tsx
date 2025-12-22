@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "AppCollab - Hackathon Project Collaboration",
   description: "Find collaborators and fill skill gaps in your hackathon projects",
+  icons: {
+    icon: '/appcollab-logo.png',
+    apple: '/appcollab-logo.png',
+  },
 };
 
 export default function RootLayout({

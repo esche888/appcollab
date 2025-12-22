@@ -5,17 +5,58 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --background: #f8fafc;
+  /* Base colors - Clean, minimal backgrounds */
+  --background: #ffffff;
+  --surface: #f8fafc;
+  --surface-elevated: #ffffff;
   --foreground: #0f172a;
-  --primary: #3b82f6;
-  --primary-dark: #2563eb;
-  --secondary: #8b5cf6;
-  --accent: #06b6d4;
+
+  /* Brand colors - Sophisticated and modern */
+  --primary: #4f46e5;        /* Indigo 600 - professional, energetic */
+  --primary-hover: #4338ca;  /* Indigo 700 - hover state */
+  --primary-active: #3730a3; /* Indigo 800 - active/pressed state */
+  --primary-light: #eef2ff;  /* Indigo 50 - backgrounds */
+  --primary-subtle: #e0e7ff; /* Indigo 100 - subtle emphasis */
+
+  --secondary: #0891b2;      /* Cyan 600 - fresh, tech-forward */
+  --secondary-hover: #0e7490; /* Cyan 700 - hover state */
+  --secondary-light: #ecfeff; /* Cyan 50 - backgrounds */
+  --secondary-subtle: #cffafe; /* Cyan 100 - subtle emphasis */
+
+  --accent: #f59e0b;         /* Amber 500 - warm, inviting */
+  --accent-hover: #d97706;   /* Amber 600 - hover state */
+  --accent-light: #fffbeb;   /* Amber 50 - backgrounds */
+  --accent-subtle: #fef3c7;  /* Amber 100 - subtle emphasis */
+
+  /* Semantic colors */
+  --success: #10b981;        /* Emerald 500 */
+  --success-light: #d1fae5;  /* Emerald 100 */
+  --warning: #f59e0b;        /* Amber 500 */
+  --warning-light: #fef3c7;  /* Amber 100 */
+  --error: #ef4444;          /* Red 500 */
+  --error-light: #fee2e2;    /* Red 100 */
+  --info: #0891b2;           /* Cyan 600 */
+  --info-light: #cffafe;     /* Cyan 100 */
+
+  /* Neutrals */
+  --muted: #64748b;          /* Slate 500 - muted text */
+  --muted-foreground: #475569; /* Slate 600 - slightly darker muted text */
+  --muted-light: #f1f5f9;    /* Slate 100 - subtle backgrounds */
+  --border: #e2e8f0;         /* Slate 200 - borders */
+  --border-strong: #cbd5e1;  /* Slate 300 - stronger borders */
+  --divider: #cbd5e1;        /* Slate 300 - dividers */
+
+  /* Interactive states */
+  --hover-overlay: rgba(79, 70, 229, 0.04);  /* Subtle indigo wash on hover */
+  --active-overlay: rgba(79, 70, 229, 0.08); /* Stronger indigo on active */
+  --focus-ring: rgba(79, 70, 229, 0.5);      /* Focus ring color */
 }
 
 body {
   color: var(--foreground);
-  background: linear-gradient(to bottom right, #f8fafc, #e0f2fe);
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(79, 70, 229, 0.07), transparent 50%),
+              linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f0fdfa 100%);
+  background-attachment: fixed;
   min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -25,16 +66,65 @@ body {
     text-wrap: balance;
   }
 
+  /* Gradient utilities */
   .gradient-primary {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  }
+
+  .gradient-secondary {
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, var(--accent) 0%, #fb923c 100%);
   }
 
   .gradient-card {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.015) 0%, rgba(8, 145, 178, 0.015) 100%);
   }
 
+  .gradient-card-hover {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.03) 0%, rgba(8, 145, 178, 0.03) 100%);
+  }
+
+  /* Glass morphism effects */
   .glass-effect {
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(255, 255, 255, 0.90);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 8px 32px rgba(79, 70, 229, 0.08);
+  }
+
+  .glass-card {
+    backdrop-filter: blur(8px) saturate(150%);
+    background: rgba(248, 250, 252, 0.7);
+    border: 1px solid var(--border);
+  }
+
+  /* Surface variants */
+  .surface {
+    background: var(--surface);
+  }
+
+  .surface-elevated {
+    background: var(--surface-elevated);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  }
+
+  /* Hover states */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -4px rgba(79, 70, 229, 0.1),
+                0 8px 16px -4px rgba(79, 70, 229, 0.06);
+  }
+
+  /* Focus states */
+  .focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
   }
 }

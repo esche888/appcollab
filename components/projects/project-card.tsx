@@ -6,12 +6,12 @@ import { AlertCircle, Star } from 'lucide-react'
 import { useState } from 'react'
 
 const statusColors = {
-  draft: 'bg-gray-100 text-gray-800',
-  idea: 'bg-purple-100 text-purple-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  on_hold: 'bg-gray-100 text-gray-800',
-  completed: 'bg-green-100 text-green-800',
-  archived: 'bg-orange-100 text-orange-800',
+  draft: 'bg-slate-100 text-slate-700 border border-slate-200',
+  idea: 'bg-appcollab-green-light/20 text-green-700 border border-appcollab-green-light/40',
+  in_progress: 'bg-appcollab-teal/20 text-teal-700 border border-appcollab-teal/40',
+  on_hold: 'bg-appcollab-orange/20 text-orange-700 border border-appcollab-orange/40',
+  completed: 'bg-appcollab-green/20 text-green-700 border border-appcollab-green/40',
+  archived: 'bg-amber-100 text-amber-700 border border-amber-200',
 }
 
 const statusLabels = {
@@ -24,7 +24,11 @@ const statusLabels = {
 }
 
 interface ProjectCardProps {
-  project: Project & { open_gaps_count?: number; is_favorited?: boolean }
+  project: Project & {
+    open_gaps_count?: number
+    is_favorited?: boolean
+    owner_profiles?: Array<{ id: string; username: string; full_name: string | null }>
+  }
   onFavoriteChange?: () => void
 }
 
@@ -57,29 +61,28 @@ export function ProjectCard({ project, onFavoriteChange }: ProjectCardProps) {
 
   return (
     <Link href={`/projects/${project.id}`}>
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 p-6 cursor-pointer border border-gray-100 hover:border-blue-200 group h-full flex flex-col relative">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 p-6 cursor-pointer border border-slate-200 hover:border-appcollab-teal group h-full flex flex-col relative">
         <button
           onClick={handleFavoriteClick}
           disabled={isUpdating}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-gray-100 transition-colors"
+          className="absolute top-4 right-4 z-10 p-2 rounded-full hover:bg-slate-100 transition-colors"
           aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
         >
           <Star
-            className={`h-5 w-5 transition-colors ${
-              isFavorited
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-400 hover:text-yellow-400'
-            }`}
+            className={`h-5 w-5 transition-colors ${isFavorited
+                ? 'fill-amber-400 text-amber-400'
+                : 'text-slate-400 hover:text-amber-400'
+              }`}
           />
         </button>
         <div className="flex justify-between items-start mb-3 gap-2 pr-8">
-          <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors flex-1">{project.title}</h3>
+          <h3 className="text-xl font-bold text-gray-900 group-hover:text-appcollab-teal-dark transition-colors flex-1">{project.title}</h3>
           <div className="flex flex-col gap-2 items-end flex-shrink-0">
             <span className={`px-3 py-1 rounded-full text-xs font-semibold shadow-sm whitespace-nowrap ${statusColors[project.status]}`}>
               {statusLabels[project.status]}
             </span>
             {(project.open_gaps_count ?? 0) > 0 && (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold shadow-sm whitespace-nowrap bg-yellow-100 text-yellow-800 flex items-center gap-1">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold shadow-sm whitespace-nowrap bg-appcollab-orange/20 text-orange-700 border border-appcollab-orange/40 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
                 {project.open_gaps_count} open gap{project.open_gaps_count! > 1 ? 's' : ''}
               </span>
@@ -93,7 +96,12 @@ export function ProjectCard({ project, onFavoriteChange }: ProjectCardProps) {
 
         <div className="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-100 mt-auto">
           <span className="font-medium">{new Date(project.created_at).toLocaleDateString()}</span>
-          <span className="px-2 py-1 bg-gray-50 rounded-full font-medium">{project.owner_ids.length} owner{project.owner_ids.length > 1 ? 's' : ''}</span>
+          <span className="px-2 py-1 bg-gray-50 rounded-full font-medium">
+            {project.owner_profiles && project.owner_profiles.length > 0
+              ? project.owner_profiles.map(o => o.username).join(', ')
+              : `${project.owner_ids.length} owner${project.owner_ids.length > 1 ? 's' : ''}`
+            }
+          </span>
         </div>
       </div>
     </Link>

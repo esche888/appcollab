@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Sparkles, Reply, Edit, Trash2 } from 'lucide-react'
+import { Sparkles, Reply, Edit, Trash2, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 type FeedbackItem = {
@@ -18,6 +18,11 @@ type FeedbackItem = {
     avatar_url: string | null
   }
   replies?: FeedbackItem[]
+  votes?: {
+    upvotes: number
+    downvotes: number
+    userVote: 'up' | 'down' | null
+  }
 }
 
 interface FeedbackListProps {
@@ -37,13 +42,40 @@ export function FeedbackList({ projectId, refreshTrigger }: FeedbackListProps) {
   const [editContent, setEditContent] = useState('')
   const [submittingEdit, setSubmittingEdit] = useState(false)
 
+  const loadVotesForFeedback = async (feedbackItems: FeedbackItem[]): Promise<FeedbackItem[]> => {
+    const loadVotesRecursive = async (items: FeedbackItem[]): Promise<FeedbackItem[]> => {
+      return Promise.all(
+        items.map(async (item) => {
+          // Load votes for this item
+          const voteResponse = await fetch(`/api/feedback/${item.id}/vote`)
+          const voteResult = await voteResponse.json()
+
+          const itemWithVotes = {
+            ...item,
+            votes: voteResult.success ? voteResult.data : { upvotes: 0, downvotes: 0, userVote: null }
+          }
+
+          // Load votes for replies recursively
+          if (item.replies && item.replies.length > 0) {
+            itemWithVotes.replies = await loadVotesRecursive(item.replies)
+          }
+
+          return itemWithVotes
+        })
+      )
+    }
+
+    return loadVotesRecursive(feedbackItems)
+  }
+
   useEffect(() => {
     async function loadFeedback() {
       const response = await fetch(`/api/projects/${projectId}/feedback`)
       const result = await response.json()
 
       if (result.success) {
-        setFeedback(result.data)
+        const feedbackWithVotes = await loadVotesForFeedback(result.data)
+        setFeedback(feedbackWithVotes)
       }
 
       setLoading(false)
@@ -84,7 +116,8 @@ export function FeedbackList({ projectId, refreshTrigger }: FeedbackListProps) {
         const feedbackResponse = await fetch(`/api/projects/${projectId}/feedback`)
         const feedbackResult = await feedbackResponse.json()
         if (feedbackResult.success) {
-          setFeedback(feedbackResult.data)
+          const feedbackWithVotes = await loadVotesForFeedback(feedbackResult.data)
+          setFeedback(feedbackWithVotes)
         }
         setReplyContent('')
         setReplyingTo(null)
@@ -131,7 +164,8 @@ export function FeedbackList({ projectId, refreshTrigger }: FeedbackListProps) {
         const feedbackResponse = await fetch(`/api/projects/${projectId}/feedback`)
         const feedbackResult = await feedbackResponse.json()
         if (feedbackResult.success) {
-          setFeedback(feedbackResult.data)
+          const feedbackWithVotes = await loadVotesForFeedback(feedbackResult.data)
+          setFeedback(feedbackWithVotes)
         }
         setEditingId(null)
         setEditTitle('')
@@ -163,13 +197,66 @@ export function FeedbackList({ projectId, refreshTrigger }: FeedbackListProps) {
         const feedbackResponse = await fetch(`/api/projects/${projectId}/feedback`)
         const feedbackResult = await feedbackResponse.json()
         if (feedbackResult.success) {
-          setFeedback(feedbackResult.data)
+          const feedbackWithVotes = await loadVotesForFeedback(feedbackResult.data)
+          setFeedback(feedbackWithVotes)
         }
       } else {
         alert(result.error || 'Failed to delete feedback')
       }
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to delete feedback')
+    }
+  }
+
+  const handleVote = async (feedbackId: string, voteType: 'up' | 'down') => {
+    try {
+      const response = await fetch(`/api/feedback/${feedbackId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vote_type: voteType }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Update the vote counts in the state
+        const updateVotesRecursive = (items: FeedbackItem[]): FeedbackItem[] => {
+          return items.map(item => {
+            if (item.id === feedbackId) {
+              // Reload votes for this specific item
+              fetch(`/api/feedback/${feedbackId}/vote`)
+                .then(res => res.json())
+                .then(voteResult => {
+                  if (voteResult.success) {
+                    setFeedback(prevFeedback => {
+                      const updateItem = (items: FeedbackItem[]): FeedbackItem[] => {
+                        return items.map(i => {
+                          if (i.id === feedbackId) {
+                            return { ...i, votes: voteResult.data }
+                          }
+                          if (i.replies) {
+                            return { ...i, replies: updateItem(i.replies) }
+                          }
+                          return i
+                        })
+                      }
+                      return updateItem(prevFeedback)
+                    })
+                  }
+                })
+            }
+            if (item.replies) {
+              return { ...item, replies: updateVotesRecursive(item.replies) }
+            }
+            return item
+          })
+        }
+        updateVotesRecursive(feedback)
+      } else {
+        alert(result.error || 'Failed to vote')
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to vote')
     }
   }
 
@@ -243,7 +330,7 @@ export function FeedbackList({ projectId, refreshTrigger }: FeedbackListProps) {
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center">
                   <span className="font-semibold text-gray-900">
-                    {item.profiles.full_name || item.profiles.username}
+                    {item.profiles.username}
                   </span>
                   {item.ai_enhanced && (
                     <span className="ml-2 inline-flex items-center text-xs text-purple-600">
@@ -258,43 +345,71 @@ export function FeedbackList({ projectId, refreshTrigger }: FeedbackListProps) {
               </div>
               <p className="text-gray-700 whitespace-pre-wrap mb-3">{item.content}</p>
 
-              <div className="flex gap-2">
-                {!isReply && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setReplyingTo(item.id)
-                      setReplyContent('')
-                    }}
-                    className="text-blue-600 hover:text-blue-700"
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2">
+                  {!isReply && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setReplyingTo(item.id)
+                        setReplyContent('')
+                      }}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <Reply className="h-4 w-4 mr-1" />
+                      Reply
+                    </Button>
+                  )}
+                  {isAuthor && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditStart(item)}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(item.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {/* Vote buttons */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleVote(item.id, 'up')}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors ${item.votes?.userVote === 'up'
+                        ? 'bg-green-100 text-green-700 font-semibold'
+                        : 'text-gray-600 hover:bg-green-50 hover:text-green-600'
+                      }`}
+                    title="Thumbs up"
                   >
-                    <Reply className="h-4 w-4 mr-1" />
-                    Reply
-                  </Button>
-                )}
-                {isAuthor && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditStart(item)}
-                      className="text-green-600 hover:text-green-700"
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(item.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Delete
-                    </Button>
-                  </>
-                )}
+                    <ThumbsUp className={`h-4 w-4 ${item.votes?.userVote === 'up' ? 'fill-current' : ''}`} />
+                    <span className="text-sm">{item.votes?.upvotes || 0}</span>
+                  </button>
+                  <button
+                    onClick={() => handleVote(item.id, 'down')}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-md transition-colors ${item.votes?.userVote === 'down'
+                        ? 'bg-red-100 text-red-700 font-semibold'
+                        : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
+                      }`}
+                    title="Thumbs down"
+                  >
+                    <ThumbsDown className={`h-4 w-4 ${item.votes?.userVote === 'down' ? 'fill-current' : ''}`} />
+                    <span className="text-sm">{item.votes?.downvotes || 0}</span>
+                  </button>
+                </div>
               </div>
             </>
           )}

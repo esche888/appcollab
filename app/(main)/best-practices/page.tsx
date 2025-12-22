@@ -141,9 +141,7 @@ export default function BestPracticesPage() {
         ) : bestPractices.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg">
             <p className="text-gray-600 mb-4">No best practices found</p>
-            <Link href="/best-practices/new">
-              <Button>Share Your First Best Practice</Button>
-            </Link>
+
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
