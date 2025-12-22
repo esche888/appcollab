@@ -6,8 +6,15 @@ import { Plus, ThumbsUp, X } from 'lucide-react'
 import type { BestPracticeRequest } from '@/types/database'
 import { UserProfileDialog } from '@/components/users/user-profile-dialog'
 
+type RequestWithProfile = BestPracticeRequest & {
+    profiles?: {
+        id: string
+        username: string
+    }
+}
+
 export function RequestPanel() {
-    const [requests, setRequests] = useState<BestPracticeRequest[]>([])
+    const [requests, setRequests] = useState<RequestWithProfile[]>([])
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [newTitle, setNewTitle] = useState('')

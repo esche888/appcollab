@@ -9,7 +9,7 @@ class AIService {
   private providers: Map<AIModelType, AIProvider>
 
   constructor() {
-    this.providers = new Map([
+    this.providers = new Map<AIModelType, AIProvider>([
       ['chatgpt', new ChatGPTProvider()],
       ['gemini', new GeminiProvider()],
       ['claude', new ClaudeProvider()],

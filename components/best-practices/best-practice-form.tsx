@@ -27,7 +27,7 @@ export function BestPracticeForm({ initialData, mode, onSubmit, onCancel }: Best
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (submitStatus: 'draft' | 'published') => {
+  const handleSubmit = async (submitStatus: 'draft' | 'published' | 'archived') => {
     setError(null)
     setLoading(true)
 
@@ -79,7 +79,7 @@ export function BestPracticeForm({ initialData, mode, onSubmit, onCancel }: Best
         <select
           id="category"
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) => setCategory(e.target.value as typeof category)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {BEST_PRACTICE_CATEGORIES.map((cat) => (

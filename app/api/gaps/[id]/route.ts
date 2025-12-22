@@ -21,7 +21,8 @@ export async function PUT(
     .eq('id', gapId)
     .single()
 
-  if (!gap || !gap.projects.owner_ids.includes(user.id)) {
+  const projects = gap?.projects as unknown as { owner_ids: string[] }
+  if (!gap || !projects?.owner_ids?.includes(user.id)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
   }
 
@@ -68,7 +69,8 @@ export async function DELETE(
     .eq('id', gapId)
     .single()
 
-  if (!gap || !gap.projects.owner_ids.includes(user.id)) {
+  const projects = gap?.projects as unknown as { owner_ids: string[] }
+  if (!gap || !projects?.owner_ids?.includes(user.id)) {
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
   }
 

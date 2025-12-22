@@ -136,18 +136,13 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: rpcResult?.error || 'Delete failed' }, { status: 500 })
   }
 
-  const { data, error, count } = { data: [rpcResult.data], error: null, count: null }
+  const { data, count } = { data: [rpcResult.data], count: null }
 
   console.log('Step 8c: Final result:', {
     hasData: !!data,
     dataLength: data?.length,
     feedbackId
   })
-
-  if (error) {
-    console.error('Step 8a: Delete error:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  }
 
   console.log('Step 9: Full delete result:', { data, count, feedbackId })
 
