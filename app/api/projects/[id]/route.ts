@@ -26,6 +26,17 @@ export async function GET(
     .is('deleted_at', null)
     .single()
 
+  // Fetch owner profiles separately since we can't directly join on array fields
+  let ownerProfiles: Array<{ id: string; username: string; full_name: string | null }> = []
+  if (data && data.owner_ids && data.owner_ids.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, full_name')
+      .in('id', data.owner_ids)
+
+    ownerProfiles = profiles || []
+  }
+
   if (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
@@ -62,7 +73,13 @@ export async function GET(
       }))
   }
 
-  return NextResponse.json({ success: true, data })
+  // Add owner profiles to the response
+  const responseData = {
+    ...data,
+    owner_profiles: ownerProfiles
+  }
+
+  return NextResponse.json({ success: true, data: responseData })
 }
 
 export async function PUT(

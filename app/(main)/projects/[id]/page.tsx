@@ -9,6 +9,7 @@ import { FeedbackForm } from '@/components/feedback/feedback-form'
 import { FeedbackList } from '@/components/feedback/feedback-list'
 import { FeatureSuggestions } from '@/components/projects/feature-suggestions'
 import { AIAssistantModal } from '@/components/projects/ai-assistant-modal'
+import { UserProfileDialog } from '@/components/users/user-profile-dialog'
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,11 @@ export type ProjectWithGaps = {
   owner_ids: string[]
   status: string
   created_at: string
+  owner_profiles?: Array<{
+    id: string
+    username: string
+    full_name: string | null
+  }>
   project_gaps: Array<{
     id: string
     gap_type: string
@@ -365,7 +371,22 @@ export default function ProjectDetailPage() {
               )}
             </div>
           </div>
-          <p className="text-lg text-blue-100 mb-6">{project.short_description}</p>
+          <p className="text-lg text-blue-100 mb-4">{project.short_description}</p>
+          {project.owner_profiles && project.owner_profiles.length > 0 && (
+            <div className="mb-4">
+              <span className="text-sm text-blue-200 mr-2">Project Owner{project.owner_profiles.length > 1 ? 's' : ''}:</span>
+              {project.owner_profiles.map((owner, index) => (
+                <span key={owner.id}>
+                  <UserProfileDialog userId={owner.id} username={owner.username}>
+                    <span className="text-sm text-white font-medium hover:text-blue-100 hover:underline cursor-pointer">
+                      {owner.username}
+                    </span>
+                  </UserProfileDialog>
+                  {index < project.owner_profiles!.length - 1 && <span className="text-blue-200">, </span>}
+                </span>
+              ))}
+            </div>
+          )}
           {(project.website_url || project.github_url) && (
             <div className="flex gap-4">
               {project.website_url && (

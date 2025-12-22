@@ -19,6 +19,7 @@ import { useDebounce } from '@/lib/hooks/use-debounce'
 type Profile = {
   id: string
   username: string
+  email?: string
   full_name: string | null
   bio: string | null
   skills: string[]
@@ -47,6 +48,7 @@ export function ProfileModal() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [bio, setBio] = useState('')
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
@@ -70,6 +72,7 @@ export function ProfileModal() {
           const data = result.data
           setProfile(data)
           setUsername(data.username || '')
+          setEmail(data.email || '')
           setFullName(data.full_name || '')
           setBio(data.bio || '')
           setSelectedSkills(data.skills || [])
@@ -168,6 +171,20 @@ export function ProfileModal() {
                     'Error saving'}
               </div>
             )}
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                id="email"
+                type="slug"
+                readOnly
+                disabled
+                value={email}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-500 cursor-not-allowed"
+              />
+            </div>
 
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">

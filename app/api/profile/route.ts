@@ -53,6 +53,7 @@ export async function GET() {
     success: true,
     data: {
       ...profile,
+      email: user.email,
       contributions: contributions || []
     }
   })
