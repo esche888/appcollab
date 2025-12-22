@@ -20,3 +20,4 @@ export type PromptType =
   | 'skill-matching'
   | 'gap-analysis'
   | 'project-summary'
+  | 'project-guidance'

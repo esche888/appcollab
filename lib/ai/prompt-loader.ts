@@ -27,6 +27,7 @@ function getFallbackPrompt(promptType: PromptType): string {
     'skill-matching': 'Based on the following user skills and project gaps, suggest which projects this user would be a good fit for:\n\nUser skills: {skills}\nProjects: {projects}',
     'gap-analysis': 'Based on the following project description, suggest potential skill gaps or areas where help might be needed:\n\n{description}',
     'project-summary': 'Create a concise 1-2 sentence summary of the following project:\n\n{description}',
+    'project-guidance': 'Analyze the following project information and provide guidance on how to proceed:\n\n{context}\n\nProvide specific, actionable recommendations based on the project status, gaps, feature suggestions, feedback, and updates.',
   }
 
   return fallbacks[promptType] || 'Process the following input:\n\n{content}'

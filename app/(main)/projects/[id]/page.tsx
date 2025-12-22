@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { FeedbackForm } from '@/components/feedback/feedback-form'
 import { FeedbackList } from '@/components/feedback/feedback-list'
 import { FeatureSuggestions } from '@/components/projects/feature-suggestions'
+import { AIAssistantModal } from '@/components/projects/ai-assistant-modal'
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-type ProjectWithGaps = {
+export type ProjectWithGaps = {
   id: string
   title: string
   short_description: string
@@ -353,6 +354,7 @@ export default function ProjectDetailPage() {
               <span className={`px-4 py-2 rounded-full text-sm font-medium ${statusColors[project.status as keyof typeof statusColors]} shadow-md`}>
                 {statusLabels[project.status as keyof typeof statusLabels]}
               </span>
+              <AIAssistantModal project={project} />
               {isOwner && (
                 <Link href={`/projects/${project.id}/edit`}>
                   <Button className="bg-white text-blue-600 hover:bg-blue-50" size="sm">
@@ -563,7 +565,13 @@ export default function ProjectDetailPage() {
               )}
             </div>
             {isFeatureSuggestionsExpanded && (
-              <FeatureSuggestions projectId={project.id} showForm={showFeatureForm} setShowForm={setShowFeatureForm} isOwner={isOwner || false} />
+              <FeatureSuggestions
+                projectId={project.id}
+                showForm={showFeatureForm}
+                setShowForm={setShowFeatureForm}
+                isOwner={isOwner || false}
+                currentUserId={userId}
+              />
             )}
           </div>
 
