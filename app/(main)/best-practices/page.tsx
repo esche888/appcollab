@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { BestPracticeCard } from '@/components/best-practices/best-practice-card'
 import { RequestPanel } from '@/components/best-practices/request-panel'
-import { Plus, Filter } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { BEST_PRACTICE_CATEGORIES } from '@/types/database'
 import type { BestPractice } from '@/types/database'
@@ -112,34 +112,14 @@ export default function BestPracticesPage() {
               <h1 className="text-4xl font-bold text-white mb-2">Best Practices</h1>
               <p className="text-white/90">Share and discover proven patterns and solutions</p>
             </div>
-            <Link href="/best-practices/new">
-              <Button className="bg-white text-appcollab-green hover:bg-gray-50 shadow-lg hover:shadow-xl transition-all transform hover:scale-105 font-semibold">
-                <Plus className="h-4 w-4 mr-2" />
-                New Best Practice
-              </Button>
-            </Link>
+
           </div>
 
           {/* Integrated Filters */}
           <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-            <div className="flex items-center gap-2 mb-4 text-white">
-              <Filter className="h-5 w-5" />
-              <h2 className="text-lg font-semibold">Filter Best Practices</h2>
-              <button
-                onClick={() => {
-                  setCategoryFilter('all')
-                  setAuthorFilter('all')
-                  setSortBy('newest')
-                }}
-                className="ml-auto text-xs text-white/70 hover:text-white underline"
-              >
-                Reset Filters
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-wrap items-end gap-4">
               {/* Category Filter */}
-              <div className="space-y-1">
+              <div className="space-y-1 flex-1 min-w-[200px]">
                 <label className="text-sm font-medium text-white/90">Category</label>
                 <select
                   value={categoryFilter}
@@ -156,7 +136,7 @@ export default function BestPracticesPage() {
               </div>
 
               {/* Author Filter */}
-              <div className="space-y-1">
+              <div className="space-y-1 flex-1 min-w-[200px]">
                 <label className="text-sm font-medium text-white/90">Author</label>
                 <select
                   value={authorFilter}
@@ -169,7 +149,7 @@ export default function BestPracticesPage() {
               </div>
 
               {/* Sort */}
-              <div className="space-y-1">
+              <div className="space-y-1 flex-1 min-w-[200px]">
                 <label className="text-sm font-medium text-white/90">Sort By</label>
                 <select
                   value={sortBy}
@@ -180,6 +160,20 @@ export default function BestPracticesPage() {
                   <option value="popular">Most Upvoted</option>
                 </select>
               </div>
+
+              {/* Reset Button */}
+              <div className="flex items-end flex-initial">
+                <button
+                  onClick={() => {
+                    setCategoryFilter('all')
+                    setAuthorFilter('all')
+                    setSortBy('newest')
+                  }}
+                  className="w-full px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/30 rounded-lg text-white font-medium transition-all text-sm h-[42px] whitespace-nowrap"
+                >
+                  Reset Filters
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -187,23 +181,34 @@ export default function BestPracticesPage() {
         <div className="space-y-12">
           {/* Main Content - Best Practices Grid */}
           <section>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-appcollab-blue-dark">Best Practices Collection</h2>
-            </div>
+            <div className="bg-white rounded-xl shadow-lg border border-appcollab-blue/20 p-6">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-appcollab-blue-dark">Best Practices Collection</h2>
+                  <p className="text-sm text-gray-500">Discover and learn from proven patterns</p>
+                </div>
+                <Link href="/best-practices/new">
+                  <Button className="bg-gradient-to-r from-appcollab-blue to-appcollab-blue-dark text-white hover:opacity-90 shadow-md font-semibold">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Best Practice
+                  </Button>
+                </Link>
+              </div>
 
-            {loading ? (
-              <p>Loading best practices...</p>
-            ) : bestPractices.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
-                <p className="text-gray-600 mb-4">No best practices found</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {bestPractices.map((bestPractice) => (
-                  <BestPracticeCard key={bestPractice.id} bestPractice={bestPractice} />
-                ))}
-              </div>
-            )}
+              {loading ? (
+                <div className="text-center py-8 text-gray-500">Loading best practices...</div>
+              ) : bestPractices.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                  <p className="text-gray-500">No best practices found</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {bestPractices.map((bestPractice) => (
+                    <BestPracticeCard key={bestPractice.id} bestPractice={bestPractice} />
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
 
           {/* Request Panel Section */}

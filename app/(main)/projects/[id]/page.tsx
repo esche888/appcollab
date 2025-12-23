@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import ReactMarkdown from 'react-markdown'
 
 export type ProjectWithGaps = {
   id: string
@@ -429,7 +430,24 @@ export default function ProjectDetailPage() {
           {project.full_description && (
             <div className="mb-8 pb-8 border-b-2 border-gray-100">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-appcollab-teal-dark to-appcollab-blue-dark bg-clip-text text-transparent mb-3">About This Project</h2>
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{project.full_description}</p>
+              <div className="text-gray-700 leading-relaxed markdown-content">
+                <ReactMarkdown
+                  components={{
+                    h1: ({ ...props }) => <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3" {...props} />,
+                    h2: ({ ...props }) => <h4 className="text-lg font-bold text-gray-900 mt-5 mb-2" {...props} />,
+                    h3: ({ ...props }) => <h5 className="text-base font-bold text-gray-900 mt-4 mb-2" {...props} />,
+                    ul: ({ ...props }) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                    ol: ({ ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                    li: ({ ...props }) => <li className="pl-1" {...props} />,
+                    p: ({ ...props }) => <p className="mb-4 last:mb-0" {...props} />,
+                    a: ({ ...props }) => <a className="text-appcollab-blue hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                    blockquote: ({ ...props }) => <blockquote className="border-l-4 border-appcollab-teal/30 pl-4 italic text-gray-600 my-4" {...props} />,
+                    code: ({ ...props }) => <code className="bg-gray-100 rounded px-1 py-0.5 text-sm font-mono text-gray-800" {...props} />,
+                  }}
+                >
+                  {project.full_description}
+                </ReactMarkdown>
+              </div>
             </div>
           )}
 

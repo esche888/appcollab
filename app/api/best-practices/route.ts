@@ -29,8 +29,9 @@ export async function GET(request: Request) {
   if (userId) {
     query = query.eq('user_id', userId)
   } else {
-    // If not filtering by specific user, only show published/archived
-    query = query.in('status', ['published', 'archived'])
+    // If not filtering by specific user, show published/archived from everyone
+    // OR drafts from the current user
+    query = query.or(`status.in.(published,archived),user_id.eq.${user.id}`)
   }
 
   // Sort
@@ -46,7 +47,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 
-  // Filter out drafts that don't belong to the current user
+  // Additional client-side filter to ensure drafts only show to their owner
+  // (This is a safety measure in case the query logic above doesn't work as expected)
   const filteredData = data?.filter((bp: any) => {
     if (bp.status === 'draft') {
       return bp.user_id === user.id

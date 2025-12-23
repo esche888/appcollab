@@ -9,6 +9,7 @@ import { CommentsList } from '@/components/best-practices/comments-list'
 import { ThumbsUp, ArrowLeft, Pencil, Trash2, Archive } from 'lucide-react'
 import Link from 'next/link'
 import type { BestPractice } from '@/types/database'
+import ReactMarkdown from 'react-markdown'
 
 type BestPracticeWithProfile = BestPractice & {
   profiles: {
@@ -171,11 +172,10 @@ export default function BestPracticeDetailPage({ params }: { params: Promise<{ i
                 <CategoryBadge category={bestPractice.category} />
                 {bestPractice.status !== 'published' && (
                   <span
-                    className={`px-2 py-1 rounded text-xs font-medium ${
-                      bestPractice.status === 'draft'
+                    className={`px-2 py-1 rounded text-xs font-medium ${bestPractice.status === 'draft'
                         ? 'bg-gray-100 text-gray-800'
                         : 'bg-orange-100 text-orange-800'
-                    }`}
+                      }`}
                   >
                     {bestPractice.status === 'draft' ? 'Draft' : 'Archived'}
                   </span>
@@ -228,8 +228,23 @@ export default function BestPracticeDetailPage({ params }: { params: Promise<{ i
           )}
 
           {/* Description */}
-          <div className="prose max-w-none mb-8">
-            <p className="text-gray-700 whitespace-pre-wrap">{bestPractice.description}</p>
+          <div className="prose prose-gray max-w-none mb-8">
+            <ReactMarkdown
+              components={{
+                h1: ({ ...props }) => <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3" {...props} />,
+                h2: ({ ...props }) => <h4 className="text-lg font-bold text-gray-900 mt-5 mb-2" {...props} />,
+                h3: ({ ...props }) => <h5 className="text-base font-bold text-gray-900 mt-4 mb-2" {...props} />,
+                ul: ({ ...props }) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                ol: ({ ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                li: ({ ...props }) => <li className="pl-1" {...props} />,
+                p: ({ ...props }) => <p className="mb-4 last:mb-0" {...props} />,
+                a: ({ ...props }) => <a className="text-appcollab-blue hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                blockquote: ({ ...props }) => <blockquote className="border-l-4 border-appcollab-teal/30 pl-4 italic text-gray-600 my-4" {...props} />,
+                code: ({ ...props }) => <code className="bg-gray-100 rounded px-1 py-0.5 text-sm font-mono text-gray-800" {...props} />,
+              }}
+            >
+              {bestPractice.description}
+            </ReactMarkdown>
           </div>
 
           {/* Comments Section */}

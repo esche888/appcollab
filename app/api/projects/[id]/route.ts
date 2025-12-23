@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import type { Project } from '@/types/database'
 import { auditService } from '@/lib/audit/audit-service'
@@ -175,6 +176,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient()
+  const supabaseAdmin = createAdminClient()
   const { id } = await params
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -194,15 +196,28 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
   }
 
-  // Soft delete
-  const { error } = await supabase
+  // Soft delete using admin client to bypass RLS
+  const deletedAt = new Date().toISOString()
+  console.log(`[DELETE] Attempting to soft delete project ${id} with deleted_at: ${deletedAt}`)
+
+  const { error } = await supabaseAdmin
     .from('projects')
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: deletedAt })
     .eq('id', id)
 
   if (error) {
+    console.error(`[DELETE] Failed to delete project ${id}:`, error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
+
+  // Verify the deletion actually happened
+  const { data: verifyData } = await supabaseAdmin
+    .from('projects')
+    .select('id, deleted_at')
+    .eq('id', id)
+    .single()
+
+  console.log(`[DELETE] Verification - Project ${id} deleted_at:`, verifyData?.deleted_at)
 
   // Log project deletion
   await auditService.logProjectAction(
@@ -214,5 +229,5 @@ export async function DELETE(
     }
   )
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, deletedAt })
 }

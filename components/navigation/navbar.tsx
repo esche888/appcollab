@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button'
 import { SettingsModal } from './settings-modal'
 import { ProfileModal } from './profile-modal'
 import { HelpModal } from './help-modal'
-import { LogOut } from 'lucide-react'
+import { LogOut, BrainCircuit } from 'lucide-react'
+import { useAIUsage } from '@/lib/context/ai-usage-context'
 
 export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const { lastTaskTokens } = useAIUsage()
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -63,7 +65,16 @@ export function Navbar() {
             </div>
           </div>
 
+
           <div className="flex items-center space-x-4">
+            {lastTaskTokens !== null && (
+              <div className="hidden md:flex items-center text-sm font-medium text-gray-600 bg-white/50 px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
+                <BrainCircuit className="h-4 w-4 mr-2 text-appcollab-teal" />
+                <span>
+                  Tokens: <span className="text-gray-900 font-bold">{lastTaskTokens.toLocaleString()}</span>
+                </span>
+              </div>
+            )}
             <HelpModal />
             <ProfileModal />
             <SettingsModal />

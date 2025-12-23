@@ -174,7 +174,8 @@ export default function EditProjectPage() {
       const result = await response.json()
 
       if (result.success) {
-        router.push('/projects')
+        // Force a full page reload to ensure the deleted project is removed from the list
+        window.location.href = '/projects'
       } else {
         setError(result.error || 'Failed to delete project')
       }

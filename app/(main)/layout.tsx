@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Navbar } from '@/components/navigation/navbar'
 import { FloatingFeedbackButton } from '@/components/app-feedback/floating-feedback-button'
+import { AIUsageProvider } from '@/lib/context/ai-usage-context'
 
 export default async function MainLayout({
   children,
@@ -18,10 +19,12 @@ export default async function MainLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <main>{children}</main>
-      <FloatingFeedbackButton />
-    </div>
+    <AIUsageProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <main>{children}</main>
+        <FloatingFeedbackButton />
+      </div>
+    </AIUsageProvider>
   )
 }

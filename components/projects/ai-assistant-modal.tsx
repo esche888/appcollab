@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dialog'
 import { Brain, Copy, Check, Loader2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import { useAIUsage } from '@/lib/context/ai-usage-context'
+
 import type { ProjectWithGaps } from '@/app/(main)/projects/[id]/page'
 
 interface AIAssistantModalProps {
@@ -22,6 +24,7 @@ export function AIAssistantModal({
   project
 }: AIAssistantModalProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const { setLastTaskTokens } = useAIUsage()
   const [loading, setLoading] = useState(false)
   const [aiResponse, setAiResponse] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -41,6 +44,9 @@ export function AIAssistantModal({
 
       if (result.success) {
         setAiResponse(result.data.content)
+        if (result.data.tokensUsed) {
+          setLastTaskTokens(result.data.tokensUsed)
+        }
       } else {
         setError(result.error || 'Failed to get AI guidance')
       }

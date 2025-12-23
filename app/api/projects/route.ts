@@ -17,6 +17,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Disable caching to ensure fresh data
+  const headers = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  }
+
   // Get user profile to check if admin
   const { data: profile } = await supabase
     .from('profiles')
@@ -74,6 +81,11 @@ export async function GET(request: Request) {
 
   const { data, error } = await query
 
+  console.log(`[GET PROJECTS] Fetched ${data?.length || 0} projects (excluding deleted)`)
+  if (data && data.length > 0) {
+    console.log('[GET PROJECTS] Sample project IDs:', data.slice(0, 3).map((p: any) => ({ id: p.id, title: p.title, deleted_at: p.deleted_at })))
+  }
+
   if (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
@@ -121,7 +133,10 @@ export async function GET(request: Request) {
     }
   })
 
-  return NextResponse.json({ success: true, data: projectsWithMetadata as Project[] })
+  return NextResponse.json(
+    { success: true, data: projectsWithMetadata as Project[] },
+    { headers }
+  )
 }
 
 export async function POST(request: Request) {

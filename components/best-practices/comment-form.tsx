@@ -12,6 +12,7 @@ export function CommentForm({ bestPracticeId, onCommentAdded }: CommentFormProps
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +32,7 @@ export function CommentForm({ bestPracticeId, onCommentAdded }: CommentFormProps
 
       if (result.success) {
         setContent('')
+        setIsExpanded(false)
         onCommentAdded()
       } else {
         setError(result.error)
@@ -42,8 +44,19 @@ export function CommentForm({ bestPracticeId, onCommentAdded }: CommentFormProps
     }
   }
 
+  if (!isExpanded) {
+    return (
+      <button
+        onClick={() => setIsExpanded(true)}
+        className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-gray-500 transition-colors text-sm"
+      >
+        Add a comment...
+      </button>
+    )
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200 animate-in fade-in zoom-in-95 duration-200">
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
           {error}
@@ -57,9 +70,10 @@ export function CommentForm({ bestPracticeId, onCommentAdded }: CommentFormProps
         <textarea
           id="comment"
           rows={4}
+          autoFocus
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           placeholder="Share your thoughts, ask questions, or provide feedback..."
           required
           maxLength={2000}
@@ -67,7 +81,19 @@ export function CommentForm({ bestPracticeId, onCommentAdded }: CommentFormProps
         <p className="text-xs text-gray-500 mt-1">{content.length}/2000 characters</p>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end space-x-3">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setIsExpanded(false)
+            setContent('')
+            setError(null)
+          }}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
         <Button type="submit" disabled={loading || !content.trim()}>
           {loading ? 'Posting...' : 'Post Comment'}
         </Button>

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ThumbsUp } from 'lucide-react'
 import type { BestPractice } from '@/types/database'
 import { CategoryBadge } from './category-badge'
+import ReactMarkdown from 'react-markdown'
 
 const statusColors = {
   draft: 'bg-gray-100 text-gray-800',
@@ -27,6 +28,20 @@ interface BestPracticeCardProps {
 
 import { UserProfileDialog } from '@/components/users/user-profile-dialog'
 
+// Helper function to strip markdown syntax for preview
+const stripMarkdown = (text: string): string => {
+  return text
+    .replace(/#{1,6}\s/g, '') // Remove headers
+    .replace(/(\*\*|__)(.*?)\1/g, '$2') // Remove bold
+    .replace(/(\*|_)(.*?)\1/g, '$2') // Remove italic
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Remove links, keep text
+    .replace(/`([^`]+)`/g, '$1') // Remove inline code
+    .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+    .replace(/^\s*[-*+]\s/gm, '') // Remove list markers
+    .replace(/^\s*\d+\.\s/gm, '') // Remove numbered list markers
+    .trim()
+}
+
 export function BestPracticeCard({ bestPractice }: BestPracticeCardProps) {
   const authorName = bestPractice.profiles?.username || bestPractice.profiles?.full_name || 'Unknown'
 
@@ -48,7 +63,7 @@ export function BestPracticeCard({ bestPractice }: BestPracticeCardProps) {
           </div>
 
           <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed flex-1">
-            {bestPractice.description}
+            {stripMarkdown(bestPractice.description)}
           </p>
 
           <div className="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-50 mt-auto">
