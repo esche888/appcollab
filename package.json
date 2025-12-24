@@ -16,6 +16,7 @@
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
+    "@react-email/components": "^1.0.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.1",
     "class-variance-authority": "^0.7.1",
@@ -28,6 +29,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
+    "resend": "^6.6.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

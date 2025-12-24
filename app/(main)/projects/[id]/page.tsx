@@ -564,13 +564,15 @@ export default function ProjectDetailPage() {
                           </p>
                           <div className="flex flex-wrap gap-2">
                             {gap.gap_contributors.map((contributor) => (
-                              <Link
+                              <UserProfileDialog
                                 key={contributor.id}
-                                href={`/profile/${contributor.user_id}`}
-                                className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm hover:bg-blue-200"
+                                userId={contributor.user_id}
+                                username={contributor.profiles.username}
                               >
-                                {contributor.profiles.username}
-                              </Link>
+                                <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm hover:bg-blue-200 cursor-pointer">
+                                  {contributor.profiles.username}
+                                </span>
+                              </UserProfileDialog>
                             ))}
                           </div>
                         </div>

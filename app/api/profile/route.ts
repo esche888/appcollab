@@ -81,6 +81,7 @@ export async function PUT(request: Request) {
       avatar_url,
       project_filters: body.project_filters,
       best_practice_filters: body.best_practice_filters,
+      notification_preferences: body.notification_preferences,
     })
     .eq('id', user.id)
     .is('deleted_at', null)

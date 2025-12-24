@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { notificationService } from '@/lib/email/notification-service'
 
 export async function GET(
   request: Request,
@@ -88,6 +89,35 @@ export async function POST(
 
   if (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+
+  // Send notification asynchronously (don't await)
+  if (data) {
+    // Fetch suggestion and project info for notification
+    const { data: suggestionData } = await supabase
+      .from('feature_suggestions')
+      .select(`
+        title,
+        project_id,
+        projects!inner (title)
+      `)
+      .eq('id', suggestionId)
+      .single()
+
+    if (suggestionData && suggestionData.projects) {
+      notificationService
+        .notifyFeatureSuggestionCommentCreated({
+          projectId: suggestionData.project_id,
+          projectTitle: suggestionData.projects.title,
+          triggeredByUserId: user.id,
+          triggeredByUsername: data.profiles?.username || 'Anonymous',
+          triggeredByUserFullName: data.profiles?.full_name,
+          contentTitle: suggestionData.title,
+          contentPreview: data.content?.substring(0, 200) || '',
+          resourceUrl: `${process.env.NEXT_PUBLIC_APP_URL}/projects/${suggestionData.project_id}#suggestions`,
+        })
+        .catch((err) => console.error('[API] Notification error:', err))
+    }
   }
 
   return NextResponse.json({ success: true, data })

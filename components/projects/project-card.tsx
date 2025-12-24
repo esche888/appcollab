@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import type { Project } from '@/types/database'
-import { AlertCircle, Star } from 'lucide-react'
+import { AlertCircle, Star, Lightbulb, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 import { UserProfileDialog } from '@/components/users/user-profile-dialog'
 
@@ -27,6 +27,8 @@ const statusLabels = {
 interface ProjectCardProps {
   project: Project & {
     open_gaps_count?: number
+    feature_suggestions_count?: number
+    feedback_count?: number
     is_favorited?: boolean
     owner_profiles?: Array<{ id: string; username: string; full_name: string | null }>
   }
@@ -95,6 +97,18 @@ export function ProjectCard({ project, onFavoriteChange }: ProjectCardProps) {
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold shadow-sm whitespace-nowrap bg-appcollab-orange/20 text-orange-700 border border-appcollab-orange/40 flex items-center gap-1">
                 <AlertCircle className="h-2.5 w-2.5" />
                 {project.open_gaps_count} gap{project.open_gaps_count! > 1 ? 's' : ''}
+              </span>
+            )}
+            {(project.feature_suggestions_count ?? 0) > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold shadow-sm whitespace-nowrap bg-appcollab-green-light/20 text-green-700 border border-appcollab-green-light/40 flex items-center gap-1">
+                <Lightbulb className="h-2.5 w-2.5" />
+                {project.feature_suggestions_count}
+              </span>
+            )}
+            {(project.feedback_count ?? 0) > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold shadow-sm whitespace-nowrap bg-appcollab-teal/20 text-teal-700 border border-appcollab-teal/40 flex items-center gap-1">
+                <MessageSquare className="h-2.5 w-2.5" />
+                {project.feedback_count}
               </span>
             )}
           </div>

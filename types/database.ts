@@ -1,3 +1,10 @@
+export type NotificationPreferences = {
+  notify_feature_suggestion_added: boolean
+  notify_feature_suggestion_comment_added: boolean
+  notify_feedback_added: boolean
+  notify_feedback_comment_added: boolean
+}
+
 export type Profile = {
   id: string
   username: string
@@ -11,6 +18,7 @@ export type Profile = {
   deleted_at: string | null
   project_filters?: Record<string, any>
   best_practice_filters?: Record<string, any>
+  notification_preferences?: NotificationPreferences
 }
 
 export type Project = {

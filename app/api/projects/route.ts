@@ -41,6 +41,15 @@ export async function GET(request: Request) {
         id,
         status,
         deleted_at
+      ),
+      feature_suggestions (
+        id,
+        deleted_at
+      ),
+      feedback (
+        id,
+        deleted_at,
+        parent_id
       )
     `)
     .is('deleted_at', null)
@@ -117,10 +126,19 @@ export async function GET(request: Request) {
 
   const ownerMap = new Map(ownerProfiles?.map(p => [p.id, p]) || [])
 
-  // Add open gaps count, is_favorited, and owner_profiles to each project
+  // Add open gaps count, feature suggestions count, feedback count, is_favorited, and owner_profiles to each project
   const projectsWithMetadata = filteredData?.map((project: any) => {
     const openGapsCount = project.project_gaps?.filter(
       (gap: any) => !gap.deleted_at && gap.status === 'open'
+    ).length || 0
+
+    const featureSuggestionsCount = project.feature_suggestions?.filter(
+      (suggestion: any) => !suggestion.deleted_at
+    ).length || 0
+
+    // Only count top-level feedback (parent_id is null) to avoid counting replies
+    const feedbackCount = project.feedback?.filter(
+      (feedback: any) => !feedback.deleted_at && !feedback.parent_id
     ).length || 0
 
     const ownerProfiles = project.owner_ids?.map((ownerId: string) => ownerMap.get(ownerId)).filter(Boolean) || []
@@ -128,6 +146,8 @@ export async function GET(request: Request) {
     return {
       ...project,
       open_gaps_count: openGapsCount,
+      feature_suggestions_count: featureSuggestionsCount,
+      feedback_count: feedbackCount,
       is_favorited: favoritedProjectIds.has(project.id),
       owner_profiles: ownerProfiles,
     }
