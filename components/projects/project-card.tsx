@@ -79,7 +79,19 @@ export function ProjectCard({ project, onFavoriteChange }: ProjectCardProps) {
           />
         </button>
         <div className="flex justify-between items-start mb-3 gap-2 pr-8">
-          <h3 className="text-xl font-bold text-gray-900 group-hover:text-appcollab-teal-dark transition-colors flex-1">{project.title}</h3>
+          <div className="flex items-center gap-3 flex-1">
+            {project.logo_url && (
+              <img
+                src={project.logo_url}
+                alt={`${project.title} logo`}
+                className="w-12 h-12 object-contain rounded-lg p-1.5 flex-shrink-0"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            )}
+            <h3 className="text-xl font-bold text-gray-900 group-hover:text-appcollab-teal-dark transition-colors">{project.title}</h3>
+          </div>
         </div>
 
         <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed flex-grow">

@@ -169,7 +169,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { title, short_description, full_description, website_url, github_url, status, gaps } = body
+  const { title, short_description, full_description, website_url, github_url, logo_url, status, gaps } = body
 
   // Create project
   const { data: project, error: projectError } = await supabase
@@ -180,6 +180,7 @@ export async function POST(request: Request) {
       full_description,
       website_url,
       github_url,
+      logo_url,
       owner_ids: [user.id],
       status: status || 'idea',
     })

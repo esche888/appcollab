@@ -40,6 +40,7 @@ type Project = {
   full_description: string | null
   website_url: string | null
   github_url: string | null
+  logo_url: string | null
   owner_ids: string[]
   status: string
   project_gaps?: Array<{
@@ -63,6 +64,7 @@ export default function EditProjectPage() {
   const [fullDescription, setFullDescription] = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [githubUrl, setGithubUrl] = useState('')
+  const [logoUrl, setLogoUrl] = useState('')
   const [status, setStatus] = useState('idea')
   const [selectedGaps, setSelectedGaps] = useState<string[]>([])
   const [gapDescriptions, setGapDescriptions] = useState<Record<string, string>>({})
@@ -91,6 +93,7 @@ export default function EditProjectPage() {
           setFullDescription(projectData.full_description || '')
           setWebsiteUrl(projectData.website_url || '')
           setGithubUrl(projectData.github_url || '')
+          setLogoUrl(projectData.logo_url || '')
           setStatus(projectData.status)
 
           // Load gaps
@@ -144,6 +147,7 @@ export default function EditProjectPage() {
           full_description: fullDescription,
           website_url: websiteUrl || null,
           github_url: githubUrl || null,
+          logo_url: logoUrl || null,
           status,
         }),
       })
@@ -305,6 +309,23 @@ export default function EditProjectPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               placeholder="https://github.com/username/repo"
             />
+          </div>
+
+          <div>
+            <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              Logo URL
+            </label>
+            <input
+              id="logoUrl"
+              type="url"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              placeholder="https://example.com/logo.png"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              URL to your project&apos;s logo image (will be displayed at 64x64px)
+            </p>
           </div>
 
           <div>

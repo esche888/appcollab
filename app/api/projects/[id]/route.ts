@@ -97,7 +97,7 @@ export async function PUT(
   }
 
   const body = await request.json()
-  const { title, short_description, full_description, website_url, github_url, status } = body
+  const { title, short_description, full_description, website_url, github_url, logo_url, status } = body
 
   // Check if user is owner and get current status
   const { data: project } = await supabase
@@ -120,6 +120,7 @@ export async function PUT(
       full_description,
       website_url,
       github_url,
+      logo_url,
       status,
     })
     .eq('id', id)

@@ -27,6 +27,7 @@ export type ProjectWithGaps = {
   full_description: string | null
   website_url: string | null
   github_url: string | null
+  logo_url: string | null
   owner_ids: string[]
   status: string
   created_at: string
@@ -100,12 +101,31 @@ export default function ProjectDetailPage() {
   const [showUpdateForm, setShowUpdateForm] = useState(false)
   const [newUpdateContent, setNewUpdateContent] = useState('')
   const [submittingUpdate, setSubmittingUpdate] = useState(false)
+  const [featureSuggestionsCount, setFeatureSuggestionsCount] = useState(0)
+  const [feedbackCount, setFeedbackCount] = useState(0)
 
   const loadUpdates = async () => {
     const response = await fetch(`/api/projects/${params.id}/updates`)
     const result = await response.json()
     if (result.success) {
       setProjectUpdates(result.data)
+    }
+  }
+
+  const loadFeatureSuggestionsCount = async () => {
+    const response = await fetch(`/api/projects/${params.id}/suggestions`)
+    const result = await response.json()
+    if (result.success) {
+      setFeatureSuggestionsCount(result.data.length)
+    }
+  }
+
+  const loadFeedbackCount = async () => {
+    const response = await fetch(`/api/projects/${params.id}/feedback`)
+    const result = await response.json()
+    if (result.success) {
+      // Count only top-level feedback (not replies)
+      setFeedbackCount(result.data.length)
     }
   }
 
@@ -128,6 +148,10 @@ export default function ProjectDetailPage() {
 
       // Load project updates
       await loadUpdates()
+
+      // Load counts for collapsed sections
+      await loadFeatureSuggestionsCount()
+      await loadFeedbackCount()
 
       setLoading(false)
     }
@@ -356,7 +380,20 @@ export default function ProjectDetailPage() {
         {/* Project Header */}
         <div className="bg-gradient-to-r from-appcollab-teal-dark to-appcollab-blue-dark rounded-2xl shadow-xl p-8 mb-6">
           <div className="flex justify-between items-start mb-4">
-            <h1 className="text-4xl font-bold text-white flex-1 mr-4">{project.title}</h1>
+            <div className="flex items-center gap-4 flex-1 mr-4">
+              {project.logo_url && (
+                <img
+                  src={project.logo_url}
+                  alt={`${project.title} logo`}
+                  className="w-16 h-16 object-contain rounded-lg p-2"
+                  onError={(e) => {
+                    // Hide image if it fails to load
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+              )}
+              <h1 className="text-4xl font-bold text-white">{project.title}</h1>
+            </div>
             <div className="flex items-center gap-3 shrink-0">
               <span className={`px-4 py-2 rounded-full text-sm font-medium ${statusColors[project.status as keyof typeof statusColors]} shadow-md`}>
                 {statusLabels[project.status as keyof typeof statusLabels]}
@@ -588,11 +625,21 @@ export default function ProjectDetailPage() {
           <div className="mb-8 bg-gradient-to-br from-appcollab-green-light/10 to-appcollab-green/20 rounded-xl p-6 border-2 border-appcollab-green-light/30">
             <div className="flex justify-between items-center mb-4">
               <button
-                onClick={() => setIsFeatureSuggestionsExpanded(!isFeatureSuggestionsExpanded)}
+                onClick={() => {
+                  setIsFeatureSuggestionsExpanded(!isFeatureSuggestionsExpanded)
+                  if (!isFeatureSuggestionsExpanded) {
+                    loadFeatureSuggestionsCount()
+                  }
+                }}
                 className="flex items-center text-2xl font-bold text-green-900 hover:text-green-700 transition-colors"
               >
                 <Lightbulb className="h-6 w-6 mr-2 text-appcollab-green-light" />
                 Feature Suggestions
+                {!isFeatureSuggestionsExpanded && (
+                  <span className="ml-2 bg-white/50 px-2 py-0.5 rounded-full text-sm font-medium">
+                    {featureSuggestionsCount}
+                  </span>
+                )}
                 {isFeatureSuggestionsExpanded ? (
                   <ChevronUp className="h-5 w-5 ml-2" />
                 ) : (
@@ -620,11 +667,21 @@ export default function ProjectDetailPage() {
           <div className="mb-8 bg-gradient-to-br from-appcollab-teal/10 to-appcollab-teal-dark/20 rounded-xl p-6 border-2 border-appcollab-teal/30">
             <div className="flex justify-between items-center mb-4">
               <button
-                onClick={() => setIsFeedbackExpanded(!isFeedbackExpanded)}
+                onClick={() => {
+                  setIsFeedbackExpanded(!isFeedbackExpanded)
+                  if (!isFeedbackExpanded) {
+                    loadFeedbackCount()
+                  }
+                }}
                 className="flex items-center text-2xl font-bold text-teal-900 hover:text-teal-700 transition-colors"
               >
                 <MessageSquare className="h-6 w-6 mr-2 text-appcollab-teal" />
                 Feedback
+                {!isFeedbackExpanded && (
+                  <span className="ml-2 bg-white/50 px-2 py-0.5 rounded-full text-sm font-medium">
+                    {feedbackCount}
+                  </span>
+                )}
                 {isFeedbackExpanded ? (
                   <ChevronUp className="h-5 w-5 ml-2" />
                 ) : (
@@ -641,7 +698,10 @@ export default function ProjectDetailPage() {
               <div className="space-y-6">
                 <FeedbackForm
                   projectId={project.id}
-                  onFeedbackAdded={() => setFeedbackRefresh(prev => prev + 1)}
+                  onFeedbackAdded={() => {
+                    setFeedbackRefresh(prev => prev + 1)
+                    loadFeedbackCount()
+                  }}
                   isExpanded={showFeedbackForm}
                   setIsExpanded={setShowFeedbackForm}
                 />
@@ -659,6 +719,11 @@ export default function ProjectDetailPage() {
               >
                 <FileText className="h-6 w-6 mr-2 text-appcollab-blue" />
                 Project Updates
+                {!isUpdatesExpanded && (
+                  <span className="ml-2 bg-white/50 px-2 py-0.5 rounded-full text-sm font-medium">
+                    {projectUpdates.length}
+                  </span>
+                )}
                 {isUpdatesExpanded ? (
                   <ChevronUp className="h-5 w-5 ml-2" />
                 ) : (

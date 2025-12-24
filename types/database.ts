@@ -28,6 +28,7 @@ export type Project = {
   full_description: string | null
   website_url: string | null
   github_url: string | null
+  logo_url: string | null
   owner_ids: string[]
   status: 'draft' | 'idea' | 'in_progress' | 'on_hold' | 'completed' | 'archived'
   created_at: string
