@@ -111,11 +111,11 @@ export async function POST(
         .eq('id', parent_id)
         .single()
 
-      if (parentData && parentData.projects) {
+      if (parentData && parentData.projects && Array.isArray(parentData.projects) && parentData.projects[0]) {
         notificationService
           .notifyFeedbackCommentCreated({
             projectId: parentData.project_id,
-            projectTitle: parentData.projects.title,
+            projectTitle: parentData.projects[0].title,
             triggeredByUserId: user.id,
             triggeredByUsername: data.profiles?.username || 'Anonymous',
             triggeredByUserFullName: data.profiles?.full_name,

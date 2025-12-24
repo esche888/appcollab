@@ -104,11 +104,11 @@ export async function POST(
       .eq('id', suggestionId)
       .single()
 
-    if (suggestionData && suggestionData.projects) {
+    if (suggestionData && suggestionData.projects && Array.isArray(suggestionData.projects) && suggestionData.projects[0]) {
       notificationService
         .notifyFeatureSuggestionCommentCreated({
           projectId: suggestionData.project_id,
-          projectTitle: suggestionData.projects.title,
+          projectTitle: suggestionData.projects[0].title,
           triggeredByUserId: user.id,
           triggeredByUsername: data.profiles?.username || 'Anonymous',
           triggeredByUserFullName: data.profiles?.full_name,

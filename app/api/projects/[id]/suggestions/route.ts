@@ -62,11 +62,11 @@ export async function POST(
   }
 
   // Send notification asynchronously (don't await)
-  if (data && data.projects) {
+  if (data && data.projects && Array.isArray(data.projects) && data.projects[0]) {
     notificationService
       .notifyFeatureSuggestionCreated({
         projectId: projectId,
-        projectTitle: data.projects.title,
+        projectTitle: data.projects[0].title,
         triggeredByUserId: user.id,
         triggeredByUsername: data.profiles?.username || 'Anonymous',
         triggeredByUserFullName: data.profiles?.full_name,
