@@ -9,9 +9,12 @@ type AIModel = 'chatgpt' | 'gemini' | 'claude'
 export default function AdminSettingsPage() {
   const [availableModels, setAvailableModels] = useState<AIModel[]>([])
   const [activeModel, setActiveModel] = useState<AIModel | null>(null)
+  const [maxCommits, setMaxCommits] = useState<number>(10)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingGeneral, setSavingGeneral] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [generalMessage, setGeneralMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     loadSettings()
@@ -19,12 +22,21 @@ export default function AdminSettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const response = await fetch('/api/admin/ai-settings')
-      const result = await response.json()
+      const [aiResponse, generalResponse] = await Promise.all([
+        fetch('/api/admin/ai-settings'),
+        fetch('/api/admin/settings')
+      ])
 
-      if (result.success) {
-        setAvailableModels(result.data.availableModels)
-        setActiveModel(result.data.activeModel)
+      const aiResult = await aiResponse.json()
+      const generalResult = await generalResponse.json()
+
+      if (aiResult.success) {
+        setAvailableModels(aiResult.data.availableModels)
+        setActiveModel(aiResult.data.activeModel)
+      }
+
+      if (generalResult.success) {
+        setMaxCommits(generalResult.data.max_commits_to_show || 10)
       }
     } catch (error) {
       console.error('Error loading settings:', error)
@@ -65,6 +77,36 @@ export default function AdminSettingsPage() {
     }
   }
 
+  const handleSaveGeneral = async () => {
+    setSavingGeneral(true)
+    setGeneralMessage(null)
+
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          max_commits_to_show: maxCommits,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setGeneralMessage({ type: 'success', text: 'Settings saved successfully!' })
+      } else {
+        setGeneralMessage({ type: 'error', text: result.error })
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      setGeneralMessage({ type: 'error', text: 'Failed to save settings' })
+    } finally {
+      setSavingGeneral(false)
+    }
+  }
+
   const modelInfo = {
     chatgpt: {
       name: 'ChatGPT (OpenAI)',
@@ -96,8 +138,56 @@ export default function AdminSettingsPage() {
   return (
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2">AI Model Settings</h1>
+        <h1 className="text-3xl font-bold mb-2">Admin Settings</h1>
         <p className="text-gray-600 mb-8">
+          Configure system-wide settings and preferences.
+        </p>
+
+        {/* General Settings */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">General Settings</h2>
+
+          {generalMessage && (
+            <div
+              className={`mb-4 px-4 py-3 rounded ${generalMessage.type === 'success'
+                ? 'bg-green-50 border border-green-200 text-green-800'
+                : 'bg-red-50 border border-red-200 text-red-800'
+                }`}
+            >
+              {generalMessage.text}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="maxCommits" className="block text-sm font-medium text-gray-700 mb-2">
+                Max Commits to Show in History
+              </label>
+              <p className="text-sm text-gray-600 mb-3">
+                Number of recent commits to display when viewing project commit history (1-100)
+              </p>
+              <input
+                id="maxCommits"
+                type="number"
+                min="1"
+                max="100"
+                value={maxCommits}
+                onChange={(e) => setMaxCommits(parseInt(e.target.value) || 10)}
+                className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <Button onClick={handleSaveGeneral} disabled={savingGeneral}>
+              {savingGeneral ? 'Saving...' : 'Save General Settings'}
+            </Button>
+          </div>
+        </div>
+
+        {/* AI Model Settings */}
+        <h2 className="text-2xl font-bold mb-4">AI Model Settings</h2>
+        <p className="text-gray-600 mb-6">
           Configure which AI model to use for enhancement features. Changes take effect immediately.
         </p>
 

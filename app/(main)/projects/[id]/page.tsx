@@ -10,6 +10,7 @@ import { FeedbackList } from '@/components/feedback/feedback-list'
 import { FeatureSuggestions } from '@/components/projects/feature-suggestions'
 import { AIAssistantModal } from '@/components/projects/ai-assistant-modal'
 import { UserProfileDialog } from '@/components/users/user-profile-dialog'
+import { CommitHistoryModal } from '@/components/projects/commit-history-modal'
 import {
   Dialog,
   DialogContent,
@@ -399,6 +400,9 @@ export default function ProjectDetailPage() {
                 {statusLabels[project.status as keyof typeof statusLabels]}
               </span>
               <AIAssistantModal project={project} />
+              {project.github_url && (
+                <CommitHistoryModal projectId={project.id} />
+              )}
               {isOwner && (
                 <Link href={`/projects/${project.id}/edit`}>
                   <Button className="bg-white text-blue-600 hover:bg-blue-50" size="sm">
