@@ -37,7 +37,7 @@ export function FeedbackCard({ feedback, commentCount = 0 }: FeedbackCardProps) 
         <div className="flex items-center justify-between text-sm text-gray-500">
           <span>by {authorName}</span>
           <div className="flex items-center gap-4">
-            <span>{new Date(feedback.created_at).toLocaleDateString()}</span>
+            <span>{new Date(feedback.created_at).toLocaleDateString()} {new Date(feedback.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             <div className="flex items-center gap-1">
               <MessageCircle className="h-4 w-4" />
               <span>{commentCount}</span>

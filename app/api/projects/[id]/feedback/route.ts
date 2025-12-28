@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { notificationService } from '@/lib/email/notification-service'
+import { auditService } from '@/lib/audit/audit-service'
 
 export async function GET(
   request: Request,
@@ -98,6 +99,21 @@ export async function POST(
             resourceUrl: `${process.env.NEXT_PUBLIC_APP_URL}/projects/${projectId}#feedback`,
           })
           .catch((err) => console.error('[API] Notification error:', err))
+
+        // Log to audit_logs for Recent Events (asynchronous, only for top-level feedback)
+        auditService
+          .logFeedbackAction(
+            user.id,
+            'feedback_created',
+            data.id,
+            {
+              project_id: projectId,
+              project_title: projectData.title,
+              feedback_title: data.title,
+              feedback_content: data.content?.substring(0, 200) || ''
+            }
+          )
+          .catch((err) => console.error('[API] Audit log error:', err))
       }
     } else {
       // Reply to feedback - notify owners about new comment

@@ -28,6 +28,7 @@ export function Navbar() {
     { href: '/projects', label: 'Projects' },
     { href: '/best-practices', label: 'Best Practices' },
     { href: '/contributors', label: 'Contributors' },
+    { href: '/events', label: 'Recent Events' },
   ]
 
   return (

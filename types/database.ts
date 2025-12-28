@@ -18,6 +18,7 @@ export type Profile = {
   deleted_at: string | null
   project_filters?: Record<string, any>
   best_practice_filters?: Record<string, any>
+  event_filters?: Record<string, any>
   notification_preferences?: NotificationPreferences
 }
 
@@ -248,9 +249,25 @@ export const AUDIT_ACTION_TYPES = [
   'user_signup',
   'ai_settings_changed',
   'admin_settings_changed',
+  'feature_suggestion_created',
+  'feature_suggestion_status_changed',
+  'feedback_created',
+  'feedback_comment_created',
 ] as const
 
 export type AuditActionType = typeof AUDIT_ACTION_TYPES[number]
+
+// Event categories for filtering
+export const EVENT_CATEGORIES = {
+  'user-related': ['user_signup'],
+  'project-related': [
+    'project_created',
+    'feature_suggestion_created',
+    'feedback_created'
+  ]
+} as const
+
+export type EventCategory = keyof typeof EVENT_CATEGORIES
 
 export type AuditLog = {
   id: string

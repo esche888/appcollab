@@ -352,6 +352,9 @@ export function FeatureSuggestions({ projectId, showForm, setShowForm, isOwner, 
                   <span className="text-sm text-gray-600">
                     by {suggestion.profiles.username}
                   </span>
+                  <span className="text-xs text-gray-500">
+                    {new Date(suggestion.created_at).toLocaleDateString()} {new Date(suggestion.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"

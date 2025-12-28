@@ -340,7 +340,7 @@ export function FeedbackList({ projectId, refreshTrigger }: FeedbackListProps) {
                   )}
                 </div>
                 <span className="text-sm text-gray-500">
-                  {new Date(item.created_at).toLocaleDateString()}
+                  {new Date(item.created_at).toLocaleDateString()} {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
               <p className="text-gray-700 whitespace-pre-wrap mb-3">{item.content}</p>

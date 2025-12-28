@@ -1,7 +1,7 @@
 import { createAdminClient } from '../supabase/admin'
 import type { AuditActionType } from '@/types/database'
 
-export type ResourceType = 'project' | 'user' | 'auth' | 'settings'
+export type ResourceType = 'project' | 'user' | 'auth' | 'settings' | 'feature_suggestion' | 'feedback'
 
 export interface AuditLogEntry {
   userId?: string  // Optional because some actions (signup) happen before user is fully created
@@ -97,6 +97,42 @@ class AuditService {
       userId,
       actionType,
       resourceType: 'settings',
+      metadata,
+    })
+  }
+
+  /**
+   * Helper for feature suggestion actions
+   */
+  async logFeatureSuggestionAction(
+    userId: string,
+    actionType: Extract<AuditActionType, 'feature_suggestion_created' | 'feature_suggestion_status_changed'>,
+    suggestionId: string,
+    metadata?: Record<string, any>
+  ) {
+    await this.log({
+      userId,
+      actionType,
+      resourceType: 'feature_suggestion',
+      resourceId: suggestionId,
+      metadata,
+    })
+  }
+
+  /**
+   * Helper for feedback actions
+   */
+  async logFeedbackAction(
+    userId: string,
+    actionType: Extract<AuditActionType, 'feedback_created' | 'feedback_comment_created'>,
+    feedbackId: string,
+    metadata?: Record<string, any>
+  ) {
+    await this.log({
+      userId,
+      actionType,
+      resourceType: 'feedback',
+      resourceId: feedbackId,
       metadata,
     })
   }
