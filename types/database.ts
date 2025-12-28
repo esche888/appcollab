@@ -243,6 +243,7 @@ export const AUDIT_ACTION_TYPES = [
   'project_unarchived',
   'user_created',
   'user_role_changed',
+  'user_status_changed',
   'user_deleted',
   'user_login',
   'user_logout',

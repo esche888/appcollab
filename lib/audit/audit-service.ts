@@ -56,7 +56,7 @@ class AuditService {
    */
   async logUserAction(
     adminUserId: string,
-    actionType: Extract<AuditActionType, 'user_created' | 'user_role_changed' | 'user_deleted'>,
+    actionType: Extract<AuditActionType, 'user_created' | 'user_role_changed' | 'user_status_changed' | 'user_deleted'>,
     targetUserId: string,
     metadata?: Record<string, any>
   ) {

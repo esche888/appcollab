@@ -1,8 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Shield, User } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { CreateAdminDialog } from '@/components/admin/create-admin-dialog'
+import { UserRoleToggle } from '@/components/admin/user-role-toggle'
+import { UserStatusToggle } from '@/components/admin/user-status-toggle'
 import {
     Table,
     TableBody,
@@ -12,31 +16,71 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
-export default async function AdminUsersPage() {
-    const supabase = await createClient()
+type UserProfile = {
+    id: string
+    username: string
+    full_name: string | null
+    role: 'user' | 'admin'
+    created_at: string
+    deleted_at: string | null
+}
 
-    const { data: { user } } = await supabase.auth.getUser()
+export default function AdminUsersPage() {
+    const router = useRouter()
+    const [users, setUsers] = useState<UserProfile[]>([])
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
 
-    if (!user) {
-        redirect('/login')
+    const loadUsers = async () => {
+        try {
+            // Get current user
+            const profileRes = await fetch('/api/profile')
+            const profileData = await profileRes.json()
+
+            if (!profileData.success) {
+                router.push('/login')
+                return
+            }
+
+            setCurrentUserId(profileData.data.id)
+
+            // Check if admin
+            if (profileData.data.role !== 'admin') {
+                router.push('/dashboard')
+                return
+            }
+
+            // Fetch all users
+            const response = await fetch('/api/admin/users')
+            const result = await response.json()
+
+            if (result.success) {
+                setUsers(result.data)
+            }
+        } catch (error) {
+            console.error('Error loading users:', error)
+        } finally {
+            setLoading(false)
+        }
     }
 
-    // Check if user is admin
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
+    useEffect(() => {
+        loadUsers()
+    }, [])
 
-    if (!profile || profile.role !== 'admin') {
-        redirect('/dashboard')
+    const handleRoleChanged = () => {
+        loadUsers()
     }
 
-    // Fetch all users
-    const { data: users } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
+    if (loading) {
+        return (
+            <div className="p-8">
+                <div className="max-w-7xl mx-auto">
+                    <p className="text-gray-600">Loading users...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="p-8">
@@ -58,13 +102,13 @@ export default async function AdminUsersPage() {
                             <TableRow>
                                 <TableHead>User</TableHead>
                                 <TableHead>Role</TableHead>
-                                <TableHead>Join Date</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Join Date</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {users?.map((userProfile) => (
-                                <TableRow key={userProfile.id}>
+                                <TableRow key={userProfile.id} className={userProfile.deleted_at ? 'opacity-60' : ''}>
                                     <TableCell>
                                         <div className="flex items-center">
                                             <div className="h-10 w-10 text-xl font-bold bg-primary/10 text-primary rounded-full flex items-center justify-center mr-3">
@@ -77,23 +121,25 @@ export default async function AdminUsersPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${userProfile.role === 'admin'
-                                            ? 'bg-purple-100 text-purple-800'
-                                            : 'bg-green-100 text-green-800'
-                                            }`}>
-                                            {userProfile.role === 'admin' ? (
-                                                <Shield className="w-3 h-3 mr-1" />
-                                            ) : (
-                                                <User className="w-3 h-3 mr-1" />
-                                            )}
-                                            {userProfile.role.charAt(0).toUpperCase() + userProfile.role.slice(1)}
-                                        </span>
+                                        <UserRoleToggle
+                                            userId={userProfile.id}
+                                            currentRole={userProfile.role}
+                                            username={userProfile.username}
+                                            isCurrentUser={userProfile.id === currentUserId}
+                                            onRoleChanged={handleRoleChanged}
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <UserStatusToggle
+                                            userId={userProfile.id}
+                                            isActive={userProfile.deleted_at === null}
+                                            username={userProfile.username}
+                                            isCurrentUser={userProfile.id === currentUserId}
+                                            onStatusChanged={handleRoleChanged}
+                                        />
                                     </TableCell>
                                     <TableCell>
                                         {new Date(userProfile.created_at).toLocaleDateString()}
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className="text-gray-500">Active</span>
                                     </TableCell>
                                 </TableRow>
                             ))}

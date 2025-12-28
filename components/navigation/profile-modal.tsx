@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User } from 'lucide-react'
+import { User, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,6 +24,7 @@ type Profile = {
   bio: string | null
   skills: string[]
   avatar_url: string | null
+  role?: 'user' | 'admin'
   contributions?: {
     id: string
     gap_id: string
@@ -149,7 +150,15 @@ export function ProfileModal() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Your Profile</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Your Profile
+            {profile?.role === 'admin' && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                <Shield className="w-3 h-3 mr-1" />
+                Administrator
+              </span>
+            )}
+          </DialogTitle>
           <DialogDescription>
             Manage your profile information and skills.
           </DialogDescription>

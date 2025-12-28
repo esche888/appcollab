@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { SettingsModal } from './settings-modal'
 import { ProfileModal } from './profile-modal'
@@ -17,6 +18,18 @@ export function Navbar() {
   const router = useRouter()
   const supabase = createClient()
   const { lastTaskTokens } = useAIUsage()
+  const [userRole, setUserRole] = useState<'user' | 'admin' | null>(null)
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const response = await fetch('/api/profile')
+      const result = await response.json()
+      if (result.success && result.data) {
+        setUserRole(result.data.role || 'user')
+      }
+    }
+    fetchUserRole()
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -29,6 +42,7 @@ export function Navbar() {
     { href: '/best-practices', label: 'Best Practices' },
     { href: '/contributors', label: 'Contributors' },
     { href: '/events', label: 'Recent Events' },
+    ...(userRole === 'admin' ? [{ href: '/admin', label: 'Admin' }] : []),
   ]
 
   return (
